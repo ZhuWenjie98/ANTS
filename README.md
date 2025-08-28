@@ -1,4 +1,4 @@
-# KRNFT
+# ANTS
 This repository provides the official PyTorch implementation of our paper ANTS: Shaping the Adaptive Negative Textual Space by MLLM for OOD Detection.
 
 ## ⚙️ Dependencies and Installation
