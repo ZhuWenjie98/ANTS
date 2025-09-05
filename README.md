@@ -1,8 +1,8 @@
 # ANTS
-This repository provides the official PyTorch implementation of our paper ANTS: Shaping the Adaptive Negative Textual Space by MLLM for OOD Detection.
+This repository provides the official PyTorch implementation of our paper ANTS: Shaping the Adaptive Negative Textual Space by MLLM for OOD Detection[![arXiv](https://img.shields.io/badge/arXiv-2509.03951-FF9999.svg)](https://www.arxiv.org/abs/2509.03951).
 
 ## 🔥 News
-- **29 Aug, 2025**: The paper will be available in arxiv.
+- **05 Sep, 2025**: The paper is available in arxiv.
 
 ## ⚙️ Dependencies and Installation
 <details>
