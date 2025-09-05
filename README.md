@@ -2,6 +2,10 @@
 
 <a href='https://www.arxiv.org/abs/2509.03951'><img src='https://img.shields.io/badge/arXiv-2509.03951-FF9999.svg'></a> &nbsp;&nbsp;
 
+[Wenjie Zhu]([https://scholar.google.com.hk/citations?hl=zh-CN&user=A-U8zE8AAAAJ](https://scholar.google.com/citations?hl=en&user=8hodVdAAAAAJ&view_op=list_works&authuser=1&gmla=AJsN-F5LTIdjk4-CWPAQkbFO4nvdXf3X4xt-JNpPlQIhrNcvDxG8jbIl4bpIXrS0v3SjC8LBkWsGh-oUfXN-KbGmC3-pFzI0Mxt3eIBVWqp9GqkR--5sVuo))<sup>1,2</sup> | [Yabin Zhang]([https://cg.cs.tsinghua.edu.cn/people/~tyang/](https://scholar.google.com/citations?user=p0GLwtoAAAAJ&hl=en))<sup>3</sup> | [Xin Jin]([https://scholar.google.com/citations?hl=zh-CN&tzom=-480&user=ZCDjTn8AAAAJ](https://scholar.google.com/citations?user=byaSC-kAAAAJ&hl=zh-CN))<sup>2</sup> | [Wenjun Zeng]([https://scholar.google.com.hk/citations?hl=zh-CN&user=UX26wSMAAAAJ](https://scholar.google.com/citations?user=_cUfvYQAAAAJ&hl=en))<sup>2</sup> | [Lei Zhang](https://www4.comp.polyu.edu.hk/~cslzhang/)<sup>1</sup>
+
+<sup>1</sup>The Hong Kong Polytechnic University, <sup>2</sup>Eastern Institute of Technology, Ningbo, <sup>3</sup>Stanford University.
+
 ## 🔥 News
 - **05 Sep, 2025**: The paper is available in arxiv.
 
