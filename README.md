@@ -6,6 +6,7 @@
 
 <sup>1</sup>The Hong Kong Polytechnic University, <sup>2</sup>Eastern Institute of Technology, Ningbo, <sup>3</sup>Stanford University.
 
+:star: If ANTS is helpful to your images or projects, please help star this repo. Thanks! :hugs:
 ## 🔥 News
 - **05 Sep, 2025**: The paper is available in arxiv.
 
