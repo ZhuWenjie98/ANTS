@@ -1,3 +1,8 @@
+<div align=center class="logo">
+      <img src="cot_ood.png" style="width:640px">
+   </a>
+</div>
+
 # ANTS: Shaping the Adaptive Negative Textual Space by MLLM for OOD Detection
 
 <a href='https://www.arxiv.org/abs/2509.03951'><img src='https://img.shields.io/badge/arXiv-2509.03951-FF9999.svg'></a> &nbsp;&nbsp;
