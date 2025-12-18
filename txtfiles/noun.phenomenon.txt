@@ -1,0 +1,629 @@
+metagenesis
+specific heat
+sunspot
+starlight
+thunderbolt
+volcanism
+alternative energy
+food chain
+ocean current
+x ray
+diamagnetism
+angular velocity
+cathode ray
+moonlight
+interrupt
+impact
+rain
+compartment pressure
+atmospheric phenomenon
+opacity
+interreflection
+juice
+hot weather
+firestorm
+cosmic dust
+physical phenomenon
+raindrop
+harmattan
+gravitational interaction
+surface tension
+brush discharge
+forked lightning
+influence
+food pyramid
+visible spectrum
+sky glow
+dust storm
+corona discharge
+microwave
+diffraction
+life force
+moment
+pull
+facilitation
+placebo effect
+negative charge
+elements
+solar energy
+west wind
+atomic energy
+sky wave
+inertia
+rest energy
+doldrums
+nuclear propulsion
+breeze
+southwester
+venous pressure
+geocentric parallax
+spectrum
+efflorescence
+exfoliation
+chromatic aberration
+floodhead
+domino effect
+change
+fair weather
+sound spectrum
+insolation
+ionic bond
+lode
+barometric pressure
+electromagnetic radiation
+precipitation
+dichroism
+work
+radio spectrum
+sunray
+draft
+capacitance
+optical illusion
+heat of solidification
+updraft
+magnetomotive force
+shear
+low beam
+bolide
+chemical bond
+moonbeam
+levitation
+gravity
+whiteout
+northwest wind
+torchlight
+ice storm
+histocompatibility
+heat ray
+santa ana
+deposit
+fresh breeze
+electric potential
+position effect
+static electricity
+haze
+paramagnetism
+scattering
+candlelight
+necrobiosis
+hysteresis
+good luck
+apparent motion
+firelight
+butterfly effect
+decay
+field
+virga
+heat of dissociation
+interaction
+bioluminescence
+serendipity
+sea-level pressure
+north equatorial current
+biology
+thaw
+geological phenomenon
+meteor
+alluvial fan
+zodiacal light
+drift
+dipole moment
+sleet
+virtual image
+absorption spectrum
+magnetic field
+radio wave
+aurora borealis
+radio signal
+ionizing radiation
+amperage
+sweat
+south equatorial current
+midnight sun
+elves
+necrosis
+wind
+polymorphism
+pulsation
+dust devil
+repercussion
+mutual induction
+snowflake
+flashover
+delta rhythm
+brainwave
+prevailing wind
+parallax
+actinic radiation
+boundary layer
+projection
+magnetic resonance
+long wave
+skin effect
+dimorphism
+cold front
+fata morgana
+solar halo
+variation
+peptide bond
+dent
+ground wave
+photoelectricity
+allotropy
+catastrophe
+ice fog
+mechanical energy
+smother
+turbulent flow
+friar's lantern
+latent heat
+centripetal force
+ultraviolet spectrum
+gas pressure
+beta radiation
+sympathetic vibration
+trade wind
+chatter mark
+turbulence
+optical phenomenon
+aureole
+atmospheric pressure
+perturbation
+electromagnetic interaction
+fog
+halo
+line storm
+conduction
+luminescence
+rainstorm
+radiation pressure
+photoconductivity
+chinook
+electrical line of force
+double bond
+metallic bond
+light air
+crystallization
+refraction
+chemical energy
+transparency
+chop
+south wind
+centrifugal force
+heat of fusion
+ion beam
+alternating current
+repulsion
+cyclosis
+medium wave
+japan current
+jet propulsion
+side effect
+positive charge
+frost heave
+hydrostatic head
+coriolis effect
+sex linkage
+overstrain
+polarization
+self-induction
+mist
+attraction
+cold wave
+infrared ray
+east wind
+electrostatic charge
+coattails effect
+valency
+tornado
+radiance
+propagation
+waterpower
+nonlinear distortion
+life
+tossup
+knock-on effect
+emission spectrum
+syzygy
+bad luck
+electrical power
+sandblast
+streamline flow
+propulsion
+bioelectricity
+doppler effect
+light
+ferromagnetism
+sea breeze
+strong gale
+freeze
+suction
+smoke
+mistral
+distortion
+facula
+electrical disturbance
+coordinate bond
+desquamation
+flotation
+overpressure
+gale
+sea
+bluster
+incidence
+tailwind
+rocket propulsion
+whole gale
+exchange
+streamer
+acoustic phenomenon
+solar parallax
+electrostatic field
+corpuscular radiation
+heliocentric parallax
+ice crystal
+mechanical phenomenon
+daylight
+hail
+southeaster
+electromagnetism
+engine
+shower
+cloud
+pleomorphism
+katabatic wind
+el nino southern oscillation
+heat
+equatorial current
+microwave spectrum
+aerodynamic force
+resolving power
+monsoon
+recognition
+bandwagon effect
+autofluorescence
+myonecrosis
+gaslight
+reluctance
+grip
+fine structure
+osmotic pressure
+resolution
+particle beam
+light breeze
+systemic circulation
+vitelline circulation
+aerobiosis
+aftermath
+ionospheric wave
+drag
+lightning
+alternation of generations
+mushroom
+noah's flood
+squall line
+geothermal energy
+heat wave
+line of force
+potential energy
+breath
+spillover
+push
+cosmic radiation
+line spectrum
+electric dipole moment
+air pocket
+gentle breeze
+wave front
+interfacial tension
+transgression
+aurora
+infrared
+current
+resonance
+discharge
+radiopacity
+systolic pressure
+beta rhythm
+high beam
+stress
+response
+circulation
+north wind
+drizzle
+reaction propulsion
+simoom
+occluded front
+gravitational field
+ballistics
+activation energy
+dynamic electricity
+brisance
+speech spectrum
+puff
+by-product
+downpour
+lorentz force
+windage
+dielectric heating
+front
+spherical aberration
+luck
+epiphenomenon
+levanter
+peruvian current
+electrical conduction
+x-ray diffraction
+van der waal's forces
+ultraviolet
+oil pressure
+pea soup
+gamma radiation
+calm air
+tyndall effect
+sultriness
+aerodynamic lift
+magnetic dipole moment
+storm
+short wave
+strong breeze
+aurora australis
+heat of sublimation
+ohmage
+pressure
+magnetic line of force
+fluorescence
+scorcher
+radiant energy
+carrier wave
+gust
+decalescence
+glow
+solar flare
+hurricane
+heat of formation
+depolarization
+trichroism
+food web
+dust cloud
+airstream
+sunset
+direct current
+kinetic energy
+dehiscence
+chemiluminescence
+corona
+afterglow
+energy level
+tempest
+gravity-assist
+resistance
+organic phenomenon
+superconductivity
+half-light
+aerosol
+beam
+induction
+thermoelectricity
+hydroelectricity
+mass spectrum
+red shift
+languor
+thundershower
+bise
+piezoelectricity
+snow
+prevailing westerly
+chemical phenomenon
+electrical phenomenon
+moment of inertia
+acoustic resistance
+electric resistance
+antitrades
+tramontane
+high wind
+nuclear winter
+fine spray
+strain
+head
+chaos
+khamsin
+cosmic background radiation
+solar gravity
+wind generation
+infrared spectrum
+gene expression
+sonic barrier
+flash flood
+magnetic moment
+radiation field
+reflection
+mother lode
+moderate breeze
+harvest
+neutron radiation
+aftereffect
+continental drift
+charge
+wave
+annual ring
+resting potential
+nuclear resonance
+atomic power
+rejection
+absorption band
+sunburst
+gulf stream
+rejuvenation
+death
+weather
+friction
+weak interaction
+fohn
+slipstream
+electric field
+twilight
+diapedesis
+strong interaction
+hertzian wave
+sound
+elastic energy
+sound pressure
+focus
+el nino
+luminous energy
+flurry
+cold weather
+heat of condensation
+ferrimagnetism
+laminar flow
+greenhouse effect
+elastance
+phosphorescence
+hydrogen bond
+vapor pressure
+load
+meteor shower
+solar magnetic field
+intraocular pressure
+double refraction
+trajectory
+lamplight
+cohesion
+mirage
+jet stream
+angular acceleration
+force
+covalent bond
+endogeny
+moderate gale
+incandescence
+laser beam
+radiation
+optical opacity
+heat of solution
+theta rhythm
+downdraft
+evoked potential
+condensation
+leverage
+hailstorm
+mass defect
+supertwister
+jet
+crosswind
+fresh gale
+magnetism
+headwind
+arterial pressure
+pyroelectricity
+line
+solar prominence
+head sea
+power
+cyclone
+atomic spectrum
+atmospheric electricity
+sprites
+sunrise
+blizzard
+squall
+ultrasound
+horizontal parallax
+photoemission
+debacle
+ground effect
+outgrowth
+reaction
+single nucleotide polymorphism
+counterglow
+galvanism
+sunlight
+warm front
+pleochroism
+scintillation
+apoptosis
+flare
+energy
+photochemical exchange
+whirlwind
+tension
+solar wind
+parhelion
+line squall
+natural phenomenon
+brownian movement
+alpha rhythm
+cosmic ray
+consequence
+conductance
+breaking point
+metempsychosis
+event
+typhoon
+dominance
+diastolic pressure
+inversion
+abiogenesis
+moment of a couple
+fogbank
+grinding
+heat of vaporization
+stellar parallax
+nuclear magnetic resonance
+thermionic current
+windstorm
+action spectrum
+electricity
+solar radiation
+beat
+fringe
+magnetosphere
+cross-link
+reactance
+voltage
+northeaster
+alpha radiation
+electromagnetic spectrum
+black-body radiation
+signal
+product
+capillarity
+binding energy
+affinity
+life cycle
+flood
+brain death
+waterspout
+pulmonary circulation
+sunbeam
+antiferromagnetism
+torsion
+coriolis force
+antitrade wind
+purchase
+thermal
+thunderstorm
+aberration
+gun smoke
+blood pressure

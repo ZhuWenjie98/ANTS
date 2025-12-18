@@ -1,0 +1,411 @@
+meronymy
+past perfect
+antipodal
+trustee-beneficiary relation
+homonymy
+west by south
+causality
+south by east
+attitude
+partnership
+gravity gradient
+eleventh
+legal relation
+passive voice
+sisterhood
+thousandth
+mood
+cosine
+female bonding
+opposition
+seaward
+to leeward
+content
+fifteenth
+receiver-creditor relation
+unit
+antonymy
+linear operator
+fortieth
+preterit
+asynchronism
+dialectic
+borderline intelligence
+exponential
+concatenation
+aspect ratio
+twentieth
+inverse
+affine transformation
+disjunctive conjunction
+ninth
+function
+lawyer-client relation
+confidential adviser-advisee relation
+change
+vertical
+competition
+paradigm
+productivity
+logarithmic scale
+troponymy
+power loading
+depression
+orientation
+polarity
+concentration gradient
+gender agreement
+east northeast
+reaumur scale
+hematocrit
+involvement
+coordinating conjunction
+patrilineage
+direction
+antithesis
+conjunction
+adversative conjunction
+transitivity
+fourteenth
+linguistic relation
+former
+mechanical advantage
+relationship
+eighteenth
+eightieth
+unilateral descent
+hundredth
+hotel occupancy
+wing loading
+inclusion
+trim
+east southeast
+fatherhood
+figure of merit
+output-to-input ratio
+additive inverse
+occupancy rate
+thirteenth
+ninetieth
+basis
+east by north
+seventieth
+magnitude relation
+politics
+transformation
+bridge
+stoichiometry
+bearing
+leftover
+price war
+batting average
+millionth
+case-to-infection proportion
+parity
+reverse
+exponential expression
+coordination
+director-stockholder relation
+immateriality
+sympathy
+temporal relation
+sine
+proportion
+sixteenth
+moment magnitude scale
+arc secant
+absentee rate
+unemployment rate
+oddness
+south southeast
+reflexivity
+implication
+materiality
+gradient
+orthogonality
+holonymy
+kronecker delta
+seventeenth
+contrariety
+west northwest
+perfective
+psychodynamics
+arc cosecant
+synonymy
+progressive
+common ground
+mohs scale
+comparison
+focal ratio
+third
+intransitivity
+indicative mood
+inflection
+alliance
+hypernymy
+highlight
+northwest
+antagonism
+fifth
+fiftieth
+tenth
+index
+fielding average
+sixth
+respiratory quotient
+detail
+west
+compass point
+order of magnitude
+south by west
+price-to-earnings ratio
+celsius scale
+relatedness
+southwest by west
+proportionality
+anaphoric relation
+communication
+leeward
+clientage
+mutual understanding
+southeast by east
+intelligence quotient
+time constant
+person agreement
+relevance
+kelvin scale
+incidence
+declension
+threshold function
+north
+multiplicative inverse
+imperative mood
+number agreement
+polar opposition
+positivity
+expansion
+commensurateness
+elevation
+tertium quid
+last
+academic relation
+motherhood
+synchronism
+scale
+antipode
+flip side
+windward
+east by south
+sixtieth
+arc cosine
+west by north
+obligation
+bilateral descent
+link
+sliding scale
+quotient
+chronology
+personal relation
+beaufort scale
+eighth
+negativity
+member
+cosecant
+latter
+thirtieth
+trigonometric function
+enantiomorphism
+executor-heir relation
+northwest by north
+modality
+subordination
+east
+south
+past progressive
+present perfect
+quarter
+teacher-student relation
+copulative conjunction
+abundance
+point
+business relation
+restrictiveness
+first
+mileage
+difference
+cephalic index
+load factor
+complementation
+safety factor
+irrelevance
+professional relation
+subjunctive mood
+billionth
+loss ratio
+fahrenheit scale
+adult intelligence
+contradictory
+silver cord
+grass roots
+southeast
+germaneness
+prevalence
+gradable opposition
+chemistry
+ratio
+contradiction
+inverse function
+richter scale
+correlation
+medical relation
+fiduciary relation
+rapport
+kinship
+southwest by south
+coreference
+southwest
+voice
+linkage
+symbiosis
+arc sine
+interrelation
+unrelatedness
+north northwest
+incompatibility
+twelfth
+arc cotangent
+exponential curve
+south southwest
+doctor-patient relation
+conjugation
+evenness
+southeast by south
+footing
+exponential series
+modification
+frontage
+fourth
+rate
+trophobiosis
+contrary
+sharing
+ungradable opposition
+average
+rankine scale
+odds
+optative mood
+relative humidity
+reflection
+unconnectedness
+hyponymy
+case agreement
+imperfective
+grammatical relation
+north northeast
+extraneousness
+loading
+secant
+northeast
+wage scale
+isometry
+efficiency
+second
+maternal-infant bonding
+active voice
+seventh
+identity
+mach number
+case-fatality proportion
+percentage
+facial index
+norm
+cardinal compass point
+translation
+male bonding
+inchoative
+inapplicability
+conflict
+antecedent
+golden section
+complementarity
+magnification
+relations
+interrogative mood
+aspect
+cogency
+horizontal
+time sharing
+future perfect
+future progressive
+arc tangent
+nurse-patient relation
+bonding
+brotherhood
+span loading
+windward side
+subpart
+northeast by east
+exponential equation
+signal-to-noise ratio
+west southwest
+subordinating conjunction
+matrilineage
+hospital occupancy
+temperature gradient
+mercalli scale
+progressive aspect
+part
+applicability
+foundation
+parentage
+gauge
+apposition
+northeast by north
+reciprocality
+bank-depositor relation
+association
+partner relation
+cotangent
+remainder
+descent
+iterative
+contrast
+conservator-ward relation
+marital relationship
+series
+nineteenth
+mutuality
+contradictoriness
+metric function
+temperature scale
+vacancy rate
+consanguinity
+agreement
+present progressive
+commensalism
+connection
+operator
+logical relation
+angular position
+mathematical relation
+north by east
+tangent
+north by west
+baseline
+parasitism
+albedo
+employee turnover
+morbidity
+semantic relation
+rotation
+refractive index
+mutual opposition
+affinity
+northwest by west
+control
+pluralization
+imaginative comparison
+steprelationship
+durative
+frequency
+reciprocal

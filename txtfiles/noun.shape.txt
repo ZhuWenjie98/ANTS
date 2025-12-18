@@ -1,0 +1,331 @@
+concave shape
+pocket
+critical angle
+asterism
+right angle
+cardioid
+interior angle
+leaf shape
+void
+hip
+perpendicular
+right triangle
+corrugation
+cleft
+view angle
+inclination
+hyperbola
+rhomboid
+straight line
+ridge
+obtuse triangle
+cylinder
+box
+exterior angle
+bifurcation
+funnel
+pouch
+pipe
+spiral
+bell
+coil
+angle of incidence
+vector
+whirl
+fork
+angle of reflection
+oblique angle
+crevice
+depression
+figure
+tesseract
+tilt angle
+disproportion
+octagon
+cuboid
+face angle
+stemma
+belly
+thalweg
+cast
+zigzag
+rhombus
+spherule
+bulge
+boundary
+incision
+nonagon
+equilateral triangle
+decahedron
+closed curve
+indentation
+quadrilateral
+line of fate
+extrados
+spherical angle
+conformation
+heart
+distorted shape
+dogleg
+convex polygon
+concave polyhedron
+envelope
+conglomeration
+quadrangular prism
+plane figure
+angle of attack
+flank
+facet
+ray
+hour angle
+stria
+hyperboloid
+simple closed curve
+intrados
+angular shape
+line of heart
+curve
+block
+regular icosahedron
+natural shape
+projection
+articulation
+diameter
+snag
+prolate cycloid
+cone
+helix
+scallop
+solid
+kink
+salient angle
+cube
+tangent plane
+rim
+trapezoid
+truncated pyramid
+bight
+jog
+convex polyhedron
+vertical angle
+ellipsoid
+picture plane
+polygon
+sine curve
+parabola
+octahedron
+dodecahedron
+element of a cylinder
+ovoid
+balance
+tail
+angle of extinction
+radius
+parallelepiped
+concave polygon
+reflex angle
+barrel
+tongue
+base
+groove
+score
+branch
+perimeter
+scoop
+crescent
+solid angle
+sphere
+loop
+symmetry
+pucker
+brink
+washout
+pencil
+lead
+gooseneck
+shapelessness
+epicycloid
+obtuse angle
+hexagram
+lower bound
+toroid
+hexahedron
+ball
+sector
+ellipse
+cladogram
+brachium
+bow
+acute triangle
+hoodoo
+facet plane
+semicircle
+hemisphere
+pentahedron
+wart
+complex plane
+dimple
+s-shape
+hole
+geodesic
+warp
+epicycle
+taper
+entasis
+hook
+altitude
+tree
+trapezohedron
+plane
+amorphous shape
+orbital plane
+recess
+regular octahedron
+chord
+conic section
+hypocycloid
+wedge
+regular polygon
+sinuosity
+fold
+star
+perigon
+element of a cone
+parallel
+rhombohedron
+plane angle
+spherical polygon
+square
+eccentricity
+point
+bulb
+oblique triangle
+roulette
+angular distance
+notch
+curtate cycloid
+uncus
+angle of refraction
+verticil
+dodecagon
+drop
+dermatoglyphic
+sag
+catenary
+dome
+intersection
+ring
+plume
+circlet
+round shape
+helix angle
+magnetic declination
+pit
+furcation
+angle
+reentrant angle
+camber
+spur
+dip
+hypotenuse
+acute angle
+isosceles triangle
+periphery
+pellet
+blob
+teardrop
+arc
+prismoid
+spheroid
+asymptote
+cutting angle
+quadrate
+upper bound
+subfigure
+wave
+undecagon
+incisure
+space
+regular hexagon
+secant
+triangular prism
+cavity
+line of life
+midplane
+crow's foot
+nub
+perversion
+solid figure
+true anomaly
+equilateral
+quadric
+cupid's bow
+cycloid
+centerline
+heptagon
+oblong
+paraboloid
+lemniscate
+frown line
+equator
+pore
+dewdrop
+caput
+frustum
+decagon
+prismatoid
+rut
+columella
+pentacle
+line
+wrinkle
+icosahedron
+reentrant polygon
+knot
+cup
+wave angle
+regular tetrahedron
+circle
+tetrahedron
+scalene triangle
+constriction
+flare
+prism
+delta
+torus
+keel
+bolus
+regular dodecahedron
+regular polyhedron
+parallelogram
+figure eight
+spherical triangle
+hexagon
+node
+complementary angles
+disk
+connection
+double helix
+rectangle
+truncated cone
+tangent
+bowl
+diagonal
+polyhedron
+cartesian plane
+polyhedral angle
+pyramid
+trapezium
+column
+tortuosity
+hollow
+azimuth
+convex shape
+triangle
+pentagon
+margin
+isogon
+element
+mogul
+arch
+bend
