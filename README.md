@@ -1,6 +1,6 @@
 
 
-# ANTS: Shaping the Adaptive Negative Textual Space by MLLM for OOD Detection
+# ANTS: Adaptive Negative Textual Space Shaping for OOD Detection via Test-Time MLLM Understanding and Reasoning
 <div align=center class="logo">
       <img src="cot_ood.jpg" style="width:640px">
    </a>
@@ -14,6 +14,7 @@
 
 :star: If ANTS is helpful to your images or projects, please help star this repo. Thanks! :hugs:
 ## 🔥 News
+- **21 Feb, 2026**: Our ANTS has been accepted by CVPR2026
 - **05 Sep, 2025**: The paper is available in arxiv.
 
 ## ⚙️ Dependencies and Installation
