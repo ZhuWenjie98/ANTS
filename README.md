@@ -1,12 +1,21 @@
-# OpenOOD-VLM: Benchmarking Generalized OOD Detection with Vision-Language Models
 
-This repository release the **official codes** of our works for out-of-distribution detection with **Vision-Language Models**. For reference, we also reproduce some representative methods of OOD detection.
 
+# ANTS: Adaptive Negative Textual Space Shaping for OOD Detection via Test-Time MLLM Understanding and Reasoning
+<div align=center class="logo">
+      <img src="cot_ood.jpg" style="width:640px">
+   </a>
+</div>
+
+<a href='https://www.arxiv.org/abs/2509.03951'><img src='https://img.shields.io/badge/arXiv-2509.03951-FF9999.svg'></a> &nbsp;&nbsp;
+
+[Wenjie Zhu](https://scholar.google.com/citations?hl=en&authuser=1&user=8hodVdAAAAAJ)<sup>1,2</sup> | [Yabin Zhang](https://scholar.google.com/citations?user=p0GLwtoAAAAJ&hl=en)<sup>3</sup> | [Xin Jin](https://scholar.google.com/citations?user=byaSC-kAAAAJ&hl=zh-CN)<sup>2</sup> | [Wenjun Zeng](https://scholar.google.com/citations?user=_cUfvYQAAAAJ&hl=en)<sup>2</sup> | [Lei Zhang](https://www4.comp.polyu.edu.hk/~cslzhang/)<sup>1</sup>
+
+<sup>1</sup>The Hong Kong Polytechnic University, <sup>2</sup>Eastern Institute of Technology, Ningbo, <sup>3</sup>Harbin Institute of Technology (Shenzhen).
+
+:star: If ANTS is helpful to your images or projects, please help star this repo. Thanks! :hugs:
 ## 🔥 News
-- **21 Nov, 2024**: [AdaNeg](https://arxiv.org/pdf/2410.20149) is accepted by NeurIPS 2024, you can easily reproduce our results with [Bash](scripts/ood/adaneg/)
-
-- **23 Aug, 2024**: [LAPT](https://arxiv.org/pdf/2407.08966) is accepted by ECCV 2024, you can easily reproduce our results with [Bash](scripts/ood/lapt/test.sh) and [Checkpoint](https://drive.google.com/file/d/1uHvqAraQDBuc_IjbqyLgSdjFDxesTAA7/view?usp=sharing)
-
+- **21 Feb, 2026**: Our ANTS has been accepted by CVPR2026
+- **05 Sep, 2025**: The paper is available in arxiv.
 
 ## ⚙️ Dependencies and Installation
 <details>
@@ -67,78 +76,5 @@ Our codebase accesses the datasets from `./data/` and pretrained models from `./
 </details>
 
 ## 🚀 Training/Testing
-We provide training and evaluation scripts for all the methods we support in [scripts folder](https://github.com/YBZH/OpenOOD-VLM/tree/main/scripts).
-
-- [`NeurIPS Official`] [AdaNeg]((https://arxiv.org/pdf/2410.20149)) 
-```sh
-sh scripts/ood/adaneg/imagenet.sh
-sh scripts/ood/adaneg/plus_LAPT.sh # Apply AdaNeg to the pre-trained LAPT prompt
-```
-
-- [`ECCV2024 Official`] [LAPT]((https://arxiv.org/pdf/2407.08966)) with pre-trained [Checkpoint](https://drive.google.com/file/d/1uHvqAraQDBuc_IjbqyLgSdjFDxesTAA7/view?usp=sharing)
-
-```sh
-sh scripts/ood/lapt/test.sh
-```
-
-- [NIPS2022 Reproduced] Zero-shot [MCM](https://arxiv.org/pdf/2211.13445)
-```sh
-sh scripts/ood/mcm/official.sh
-```
-
-- [ICLR2024 Reproduced] Zero-shot [NegLabel](https://arxiv.org/pdf/2403.20078)
-```sh
-sh scripts/ood/neglabel/official.sh
-```
-
-<!-- We release the **official codes** of our works for OOD detection with Vision-Language Models, including:
-> - [x] [ECCV2024: LAPT: Label-driven Automated Prompt Tuning for OOD Detection with Vision-Language Models](https://arxiv.org/pdf/2407.08966) with [Bash](scripts/ood/lapt/test.sh) and [Checkpoint](https://drive.google.com/file/d/1uHvqAraQDBuc_IjbqyLgSdjFDxesTAA7/view?usp=sharing)
-</details>
-
-We will also reproduce some interesting works for OOD detection with Vision-Language Models, including:
-> - [x] [NIPS2022: Delving into out-of-distribution detection with vision-language representations](https://arxiv.org/pdf/2211.13445) with [Bash](scripts/ood/mcm/official.sh)
-> - [x] [ICLR2024: Negative Label Guided OOD Detection with Pretrained Vision-Language Models](https://arxiv.org/pdf/2403.20078)  with [Bash](scripts/ood/neglabel/official.sh)
-</details> -->
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## 📖 Citation
-If you find our repository useful for your research, please consider citing our paper:
-```bibtex
-
-@article{zhang2024lapt,
-  title={LAPT: Label-driven Automated Prompt Tuning for OOD Detection with Vision-Language Models},
-  author={Zhang, Yabin and Zhu, Wenjie and He, Chenhang and Zhang, Lei},
-  journal={Proceedings of the european conference on computer vision (ECCV)},
-  year={2024}
-}
-
-@article{zhang2024adaneg,
-  title={AdaNeg: Adaptive Negative Proxy Guided OOD Detection with Vision-Language Models},
-  author={Zhang, Yabin and Zhang, Lei},
-  journal={Conference on Neural Information Processing Systems},
-  year={2024}
-}
-
-```
-
-## 🙏 Acknowledgement
-
-- [OpenOOD](https://github.com/Jingkang50/OpenOOD), an extensible codebase with Vision Models only.
-
-
-
+We provide training and evaluation scripts for all the methods we support in [scripts folder]().
 

@@ -337,11 +337,11 @@ class OODEvaluatorClipTTA(OODEvaluator):
         #         id_gt = np.concatenate([id_gt, csid_gt])
         # load nearood data and compute ood metrics
         # pdb.set_trace()
-        print(u'\u2500' * 70, flush=True)
-        self._eval_ood(net, id_data_loaders['test'],
-                       ood_data_loaders,
-                       postprocessor,
-                       ood_split='nearood', fsood=fsood)
+        # print(u'\u2500' * 70, flush=True)
+        # self._eval_ood(net, id_data_loaders['test'],
+        #                ood_data_loaders,
+        #                postprocessor,
+        #                ood_split='nearood', fsood=fsood)
 
         # load farood data and compute ood metrics
         print(u'\u2500' * 70, flush=True)

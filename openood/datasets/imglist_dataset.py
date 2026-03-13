@@ -124,6 +124,7 @@ class ImglistDataset(BaseDataset):
                 image = Image.open(buff).convert('RGB')
                 sample['data'] = self.transform_image(image)
                 sample['data_aux'] = self.transform_aux_image(image)
+                sample['path'] = path
             extras = ast.literal_eval(extra_str)
             try:
                 for key, value in extras.items():

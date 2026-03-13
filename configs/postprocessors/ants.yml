@@ -1,0 +1,7 @@
+postprocessor:
+  name: ants
+  APS_mode: True  # search for the best.
+  postprocessor_args:
+    group_num: 1
+    random_permute: True
+    in_score: sum

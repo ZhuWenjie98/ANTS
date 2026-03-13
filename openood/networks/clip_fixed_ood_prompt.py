@@ -644,65 +644,77 @@ def get_text_features_neg(model, dataset, text_prompt, text_center, ood_number):
     # torch.save(selected_adj_text + selected_noun_text + unselected_adj_text + unselected_noun_text, 'text_cancidate_list.pth')
     # pdb.set_trace()
     adj_imagenet_template = ['This is a {} photo.']
-    with torch.no_grad():
-        text_features_neg = []
-        print('the adj template is set as:', adj_imagenet_template)
-        for classname in tqdm(selected_adj_text):
-            texts = [template.format(classname) for template in adj_imagenet_template]  # format with class
-            texts = clip.tokenize(texts).cuda()  # tokenize
-            class_embeddings = model.encode_text(texts)  # embed with text encoder
-            class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
-            if text_center:
-                class_embedding = class_embeddings.mean(dim=0)
-                class_embedding /= class_embedding.norm()
-                text_features_neg.append(class_embedding)
-            else:
-                text_features_neg.append(class_embeddings)
-        print('the noun template is set as:', templates)
-        for classname in tqdm(selected_noun_text):
-            texts = [template.format(classname) for template in templates]  # format with class
-            texts = clip.tokenize(texts).cuda()  # tokenize
-            class_embeddings = model.encode_text(texts)  # embed with text encoder
-            class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
-            if text_center:
-                class_embedding = class_embeddings.mean(dim=0)
-                class_embedding /= class_embedding.norm()
-                text_features_neg.append(class_embedding)
-            else:
-                text_features_neg.append(class_embeddings)
 
-        ############################ Avoiding unnecessary computation for text_features_unselected
-        # text_features_unselected = text_features_neg
-        # print('not calculating the unselected text for time saving')
-        text_features_unselected = []
-        for classname in tqdm(unselected_adj_text):
-            texts = [template.format(classname) for template in adj_imagenet_template]  # format with class
-            texts = clip.tokenize(texts).cuda()  # tokenize
-            class_embeddings = model.encode_text(texts)  # embed with text encoder
-            class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
-            if text_center:
-                class_embedding = class_embeddings.mean(dim=0)
-                class_embedding /= class_embedding.norm()
-                text_features_unselected.append(class_embedding)
-            else:
-                text_features_unselected.append(class_embeddings)
+    save_path_id_ood = "text_features_id_ood.pt"
+    save_path_unselected = "text_features_unselected.pt"
 
-        for classname in tqdm(unselected_noun_text):
-            texts = [template.format(classname) for template in templates]  # format with class
-            texts = clip.tokenize(texts).cuda()  # tokenize
-            class_embeddings = model.encode_text(texts)  # embed with text encoder
-            class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
-            if text_center:
-                class_embedding = class_embeddings.mean(dim=0)
-                class_embedding /= class_embedding.norm()
-                text_features_unselected.append(class_embedding)
-            else:
-                text_features_unselected.append(class_embeddings)
+    if os.path.exists(save_path_id_ood) and os.path.exists(save_path_unselected):
+        text_features_id_ood = torch.load(save_path_id_ood)
+        text_features_unselected = torch.load(save_path_unselected)
+    else:
+        
+        with torch.no_grad():
+            text_features_neg = []
+            print('the adj template is set as:', adj_imagenet_template)
+            for classname in tqdm(selected_adj_text):
+                texts = [template.format(classname) for template in adj_imagenet_template]  # format with class
+                texts = clip.tokenize(texts).cuda()  # tokenize
+                class_embeddings = model.encode_text(texts)  # embed with text encoder
+                class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
+                if text_center:
+                    class_embedding = class_embeddings.mean(dim=0)
+                    class_embedding /= class_embedding.norm()
+                    text_features_neg.append(class_embedding)
+                else:
+                    text_features_neg.append(class_embeddings)
+            print('the noun template is set as:', templates)
+            for classname in tqdm(selected_noun_text):
+                texts = [template.format(classname) for template in templates]  # format with class
+                texts = clip.tokenize(texts).cuda()  # tokenize
+                class_embeddings = model.encode_text(texts)  # embed with text encoder
+                class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
+                if text_center:
+                    class_embedding = class_embeddings.mean(dim=0)
+                    class_embedding /= class_embedding.norm()
+                    text_features_neg.append(class_embedding)
+                else:
+                    text_features_neg.append(class_embeddings)
 
-        text_features_unselected = torch.stack(text_features_unselected, dim=1).cuda() # 512*1000  or  torch.Size([7, 10000, 512])
-        text_features_neg = torch.stack(text_features_neg, dim=1).cuda() # 512*1000  or  torch.Size([7, 10000, 512])
+            ############################ Avoiding unnecessary computation for text_features_unselected
+            # text_features_unselected = text_features_neg
+            # print('not calculating the unselected text for time saving')
+            text_features_unselected = []
+            for classname in tqdm(unselected_adj_text):
+                texts = [template.format(classname) for template in adj_imagenet_template]  # format with class
+                texts = clip.tokenize(texts).cuda()  # tokenize
+                class_embeddings = model.encode_text(texts)  # embed with text encoder
+                class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
+                if text_center:
+                    class_embedding = class_embeddings.mean(dim=0)
+                    class_embedding /= class_embedding.norm()
+                    text_features_unselected.append(class_embedding)
+                else:
+                    text_features_unselected.append(class_embeddings)
 
-    text_features_id_ood = torch.cat((text_features, text_features_neg), dim=1)
+            for classname in tqdm(unselected_noun_text):
+                texts = [template.format(classname) for template in templates]  # format with class
+                texts = clip.tokenize(texts).cuda()  # tokenize
+                class_embeddings = model.encode_text(texts)  # embed with text encoder
+                class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
+                if text_center:
+                    class_embedding = class_embeddings.mean(dim=0)
+                    class_embedding /= class_embedding.norm()
+                    text_features_unselected.append(class_embedding)
+                else:
+                    text_features_unselected.append(class_embeddings)
+
+            text_features_unselected = torch.stack(text_features_unselected, dim=1).cuda() # 512*1000  or  torch.Size([7, 10000, 512])
+            text_features_neg = torch.stack(text_features_neg, dim=1).cuda() # 512*1000  or  torch.Size([7, 10000, 512])
+
+        text_features_id_ood = torch.cat((text_features, text_features_neg), dim=1)
+
+        torch.save(text_features_id_ood, save_path_id_ood)
+        torch.save(text_features_unselected, save_path_unselected)
     # pdb.set_trace()
     return text_features_id_ood, text_features_unselected
 
