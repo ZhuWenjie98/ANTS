@@ -1,21 +1,31 @@
 
 
-# ANTS: Adaptive Negative Textual Space Shaping for OOD Detection via Test-Time MLLM Understanding and Reasoning
-<div align=center class="logo">
-      <img src="cot_ood.jpg" style="width:640px">
-   </a>
-</div>
+## ANTS: Adaptive Negative Textual Space Shaping for OOD Detection via Test-Time MLLM Understanding and Reasoning(CVPR2026)
 
-<a href='https://www.arxiv.org/abs/2509.03951'><img src='https://img.shields.io/badge/arXiv-2509.03951-FF9999.svg'></a> &nbsp;&nbsp;
+
+<a href='https://www.arxiv.org/abs/2509.03951'><img src='https://img.shields.io/badge/arXiv-2509.03951-b31b1b.svg'></a> &nbsp;&nbsp;
 
 [Wenjie Zhu](https://scholar.google.com/citations?hl=en&authuser=1&user=8hodVdAAAAAJ)<sup>1,2</sup> | [Yabin Zhang](https://scholar.google.com/citations?user=p0GLwtoAAAAJ&hl=en)<sup>3</sup> | [Xin Jin](https://scholar.google.com/citations?user=byaSC-kAAAAJ&hl=zh-CN)<sup>2</sup> | [Wenjun Zeng](https://scholar.google.com/citations?user=_cUfvYQAAAAJ&hl=en)<sup>2</sup> | [Lei Zhang](https://www4.comp.polyu.edu.hk/~cslzhang/)<sup>1</sup>
 
 <sup>1</sup>The Hong Kong Polytechnic University, <sup>2</sup>Eastern Institute of Technology, Ningbo, <sup>3</sup>Harbin Institute of Technology (Shenzhen).
 
-:star: If ANTS is helpful to your images or projects, please help star this repo. Thanks! :hugs:
+
+If ANTS is helpful to your images or projects, please help star this repo. Thanks!
 ## 🔥 News
 - **21 Feb, 2026**: Our ANTS has been accepted by CVPR2026
 - **05 Sep, 2025**: The paper is available in arxiv.
+
+## 🔎 Test-Time MLLM Understanding and Reasoning
+<div align=center class="logo">
+      <img src="figs/cot_ood.jpg" style="width:320px">
+   </a>
+</div>
+
+## 🔎 Overview framework
+<div align=center class="logo">
+      <img src="figs/cvpr_frame.jpg" style="width:640px">
+   </a>
+</div>
 
 ## ⚙️ Dependencies and Installation
 <details>

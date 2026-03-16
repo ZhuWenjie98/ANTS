@@ -4,9 +4,9 @@ channels:
   - conda-forge
 dependencies:
   - python=3.8
-  - pytorch=1.8.1
-  - torchvision=0.9.1
-  - cudatoolkit=10.1
+  - pytorch=2.8.0
+  - torchvision=0.23.0
+  - cudatoolkit=12.1
   - scikit-learn=0.24.2
   - json5=0.9.6
   - matplotlib=3.3.0
@@ -26,3 +26,4 @@ dependencies:
     - Cython==0.29.30
     - faiss-gpu==1.7.2
     - gdown==4.5.1
+    - transformers==4.57.0
