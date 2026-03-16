@@ -5,15 +5,19 @@
 
 <a href='https://www.arxiv.org/abs/2509.03951'><img src='https://img.shields.io/badge/arXiv-2509.03951-b31b1b.svg'></a> &nbsp;&nbsp;
 
-[Wenjie Zhu](https://scholar.google.com/citations?hl=en&authuser=1&user=8hodVdAAAAAJ)<sup>1,2</sup> | [Yabin Zhang](https://scholar.google.com/citations?user=p0GLwtoAAAAJ&hl=en)<sup>3</sup> | [Xin Jin](https://scholar.google.com/citations?user=byaSC-kAAAAJ&hl=zh-CN)<sup>2</sup> | [Wenjun Zeng](https://scholar.google.com/citations?user=_cUfvYQAAAAJ&hl=en)<sup>2</sup> | [Lei Zhang](https://www4.comp.polyu.edu.hk/~cslzhang/)<sup>1</sup>
+[Wenjie Zhu](https://scholar.google.com/citations?hl=en&authuser=1&user=8hodVdAAAAAJ)<sup>1,2</sup> | [Yabin Zhang](https://scholar.google.com/citations?user=p0GLwtoAAAAJ&hl=en)<sup>3</sup> | [Xin Jin](https://scholar.google.com/citations?user=byaSC-kAAAAJ&hl=zh-CN)<sup>2,4</sup> | [Wenjun Zeng](https://scholar.google.com/citations?user=_cUfvYQAAAAJ&hl=en)<sup>2</sup> | [Lei Zhang](https://www4.comp.polyu.edu.hk/~cslzhang/)<sup>1</sup>
 
-<sup>1</sup>The Hong Kong Polytechnic University, <sup>2</sup>Eastern Institute of Technology, Ningbo, <sup>3</sup>Harbin Institute of Technology (Shenzhen).
+<sup>1</sup>The Hong Kong Polytechnic University, <sup>2</sup>Eastern Institute of Technology, Ningbo, <sup>3</sup>Harbin Institute of Technology (Shenzhen). <sup>4</sup>Zhongguancun Academy
 
 
 If ANTS is helpful to your images or projects, please help star this repo. Thanks!
 ## 🔥 News
 - **21 Feb, 2026**: Our ANTS has been accepted by CVPR2026
 - **05 Sep, 2025**: The paper is available in arxiv.
+- **01 Sep, 2025**: Create this repo.
+
+### 📌 TODO
+- [ ] Merge code into OpenOOD-VLM
 
 ## 🔎 Test-Time MLLM Understanding and Reasoning
 <div align=center class="logo">
@@ -31,7 +35,7 @@ If ANTS is helpful to your images or projects, please help star this repo. Thank
 <details>
   <summary>Follow OpenOOD to set up the environment, or use our provided instructions below.</summary>
 
-  pip install git+https://github.com/YBZH/OpenOOD-VLM
+  pip install git+https://github.com/ZhuWenjie98/ANTS.git
 
 </details>
 
@@ -85,6 +89,6 @@ Our codebase accesses the datasets from `./data/` and pretrained models from `./
 >      > Covariate-Shifted ID: `ImageNet-C`, `ImageNet-R`, `ImageNet-v2`;
 </details>
 
-## 🚀 Training/Testing
-We provide training and evaluation scripts for all the methods we support in [scripts folder]().
+## 🚀 Test time understanding and reasoning
+We provide the evaluation scripts for all the methods we support in [scripts folder]().
 
