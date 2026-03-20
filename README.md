@@ -90,5 +90,22 @@ Our codebase accesses the datasets from `./data/` and pretrained models from `./
 </details>
 
 ## 🚀 Test time understanding and reasoning
-We provide the evaluation scripts for all the methods we support in [scripts folder]().
+We provide the evaluation scripts for all the methods we support in [scripts folder](scripts/ood/ants).
+
+## 📖 Citation
+If you find our repository useful for your research, please consider citing our paper:
+```bibtex
+
+@article{zhu2025ants,
+  title={ANTS: Adaptive Negative Textual Space Shaping for OOD Detection via Test-Time MLLM Understanding and Reasoning},
+  author={Zhu, Wenjie and Zhang, Yabin and Jin, Xin and Zeng, Wenjun and Zhang, Lei},
+  journal={arXiv preprint arXiv:2509.03951},
+  year={2025}
+}
+
+```
+
+## 🙏 Acknowledgement
+
+- [OpenOOD](https://github.com/Jingkang50/OpenOOD), an extensible codebase with Vision Models only.
 
