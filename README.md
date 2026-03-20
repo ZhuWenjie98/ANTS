@@ -12,6 +12,7 @@
 
 If ANTS is helpful to your images or projects, please help star this repo. Thanks!
 ## 🔥 News
+- **30 Mar, 2026**: Merge code into OpenOOD-VLM, You can find the relevant project links in [OpenOOD-VLM](https://github.com/YBZh/OpenOOD-VLM)
 - **21 Feb, 2026**: Our ANTS has been accepted by CVPR2026
 - **05 Sep, 2025**: The paper is available in arxiv.
 - **01 Sep, 2025**: Create this repo.
