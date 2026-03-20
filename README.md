@@ -18,7 +18,6 @@ If ANTS is helpful to your images or projects, please help star this repo. Thank
 - **01 Sep, 2025**: Create this repo.
 
 ### 📌 TODO
-- 
 
 ## 🔎 Test-Time MLLM Understanding and Reasoning
 <div align=center class="logo">
