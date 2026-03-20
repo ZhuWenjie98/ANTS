@@ -8,3 +8,4 @@ postprocessor:
     in_score: sum
     neglabel_init_flag: False
     ens_stop_step: 20
+    mllm_model_type: QWEN

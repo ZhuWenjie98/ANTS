@@ -3,15 +3,16 @@
 ############################################################ 
 #!/bin/bash
 prompt=nice
-in_score=sum
+in_score=far_only # ada or far_only or near_only // recommend use far_only for far-ood and near_only for near-ood, this will achieve more accurate results
 random_permute=True
 backbone=ViT-B/16
 neglabel_init_flag=False
 eta=0.50 # 0.75 0.50 0.25
 # imagenet_traditional_four_ood
+mllm_model_type=QWEN # LLAVA QWEN BLIP2 // Near-OOD must use LLAVA or QWEN, Far-OOD can use BLIP2 to accelerate
 for group_num in 100  # 100 50 10
 do
-    for ens_stop_step in 20  # 20 10 5 use 10/5 will be more fast, inaturelist and sun perform the same at 10 and 20
+    for ens_stop_step in 10  # 20 10 5, use 5 will be more fast, use 20 get the best results
     do
         for datasetconfig in imagenet_traditional_four_ood
         do
@@ -41,6 +42,7 @@ do
             --postprocessor.postprocessor_args.neglabel_init_flag ${neglabel_init_flag}  \
             --postprocessor.postprocessor_args.eta ${eta}  \
             --postprocessor.postprocessor_args.ens_stop_step ${ens_stop_step}  \
+            --postprocessor.postprocessor_args.mllm_model_type ${mllm_model_type}  \
             --num_gpus 1 --num_workers 8 \
             --merge_option merge \
             --output_dir ./cvpr_reimp/ \
