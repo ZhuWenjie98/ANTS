@@ -1,6 +1,6 @@
 
 
-## ANTS: Adaptive Negative Textual Space Shaping for OOD Detection via Test-Time MLLM Understanding and Reasoning (CVPR2026 oral)
+## ANTS: Adaptive Negative Textual Space Shaping for OOD Detection via Test-Time MLLM Understanding and Reasoning (CVPR2026 Oral)
 
 
 <a href='https://www.arxiv.org/abs/2509.03951'><img src='https://img.shields.io/badge/arXiv-2509.03951-b31b1b.svg'></a> &nbsp;&nbsp;
@@ -13,7 +13,7 @@
 If ANTS is helpful to your images or projects, please help star this repo. Thanks!
 ## 🔥 News
 - **30 Mar, 2026**: Merge code into OpenOOD-VLM, You can find the relevant project links in [OpenOOD-VLM](https://github.com/YBZh/OpenOOD-VLM)
-- **21 Feb, 2026**: Our ANTS has been accepted by CVPR2026
+- **21 Feb, 2026**: Our ANTS has been accepted by CVPR2026 Oral
 - **05 Sep, 2025**: The paper is available in arxiv.
 - **01 Sep, 2025**: Create this repo.
 
