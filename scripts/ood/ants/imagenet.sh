@@ -12,11 +12,11 @@ eta=0.50 # 0.75 0.50 0.25
 mllm_model_type=QWEN # LLAVA QWEN BLIP2 // Near-OOD must use LLAVA or QWEN, Far-OOD can use BLIP2 to accelerate
 for group_num in 100  # 100 50 10
 do
-    for ens_stop_step in 20  # 20 10 5, use 5 will be more fast, use 20 get the best results
+    for ens_stop_step in 10  # 20 10 5, use 5 will be more fast, use 20 get the best results
     do
         for datasetconfig in imagenet_traditional_four_ood
         do
-            CUDA_VISIBLE_DEVICES=1 python main.py \
+            CUDA_VISIBLE_DEVICES=2 python main.py \
             --config configs/datasets/imagenet/${datasetconfig}.yml \
             configs/networks/fixed_clip.yml \
             configs/pipelines/test/test_fsood.yml \
