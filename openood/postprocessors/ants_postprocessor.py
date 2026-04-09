@@ -25,7 +25,6 @@ from transformers.image_utils import load_image
 import copy
 from transformers import AutoProcessor, LlavaForConditionalGeneration, Blip2ForConditionalGeneration, BlipForConditionalGeneration, Qwen2VLForConditionalGeneration, Qwen3VLForConditionalGeneration
 from transformers import BlipProcessor, BlipForQuestionAnswering, Blip2Processor
-from transformers import InstructBlipProcessor, InstructBlipForConditionalGeneration
 from transformers import AutoModelForVision2Seq
 
 # imagenet_classes = imagenet_near_classnames
@@ -69,9 +68,7 @@ class ANTSprocessor(ANTSBasePostprocessor):
         self.upper_interval = None
         self.high_freq_pred_dict = {}
         self.pred = []
-        
-
-        self.mllm_model_type = "LLAVA"
+        self.mllm_model_type = self.args.mllm_model_type
         
     
     def setup(self, net: nn.Module, id_loader_dict, ood_loader_dict):
@@ -216,7 +213,7 @@ class ANTSprocessor(ANTSBasePostprocessor):
             output_far = logit_scale * image_features @ id_ens_text_features.t() # batch * class.
             if self.far_negative_feature_queue.shape[0] > self.group_len*10:
                 conf_in_far = self.grouping_score(output_far)
-                balance_conf_in_far = self.grouping_score(output_far, group_len=self.group_len*10)
+                balance_conf_in_far = self.grouping_score(output_far, group_len=self.group_len*10) #the balance conf is for calculating ada_weight.
             else:
                 score_in_far = output_far.softmax(dim=-1)
                 conf_in_far = score_in_far[:, :class_num].sum(dim=-1)
@@ -231,7 +228,7 @@ class ANTSprocessor(ANTSBasePostprocessor):
             output_near = logit_scale * image_features @ id_vsnl_text_features.t() # batch * class.
             balanced_output_near = logit_scale * image_features @ balanced_id_vsnl_text_features.t() # batch * class.
             conf_in_near = self.grouping_score(output_near)
-            balance_conf_in_near = self.grouping_score(balanced_output_near, group_len=self.group_len*10)
+            balance_conf_in_near = self.grouping_score(balanced_output_near, group_len=self.group_len*10) #the balance conf is for calculating ada_weight.
         else:
             conf_in_near = None 
             balance_conf_in_near = None
@@ -291,9 +288,6 @@ class ANTSprocessor(ANTSBasePostprocessor):
             processor = AutoProcessor.from_pretrained("Salesforce/blip2-opt-2.7b", use_fast=True)
             model = Blip2ForConditionalGeneration.from_pretrained("Salesforce/blip2-opt-2.7b", torch_dtype=torch.float16, device_map="auto")
             model = model.to(device)
-        elif type=='InstructBLIP':
-            processor = InstructBlipProcessor.from_pretrained("Salesforce/instructblip-flan-t5-xl", torch_dtype=torch.float16)
-            model = InstructBlipForConditionalGeneration.from_pretrained("Salesforce/instructblip-flan-t5-xl", torch_dtype=torch.float16)
         elif type=='QWEN':
             min_pixels = 256*28*28
             max_pixels = 1280*28*28
@@ -310,17 +304,6 @@ class ANTSprocessor(ANTSBasePostprocessor):
             # only llava have chat template
             #model_id = "llava-hf/llava-1.5-7b-hf"
             processor = AutoProcessor.from_pretrained(model_id, torch_dtype=torch.float16, low_cpu_mem_usage=True, load_in_4bit=True, use_flash_attention_2=True)
-        elif type=='SmolVLM':
-            device = torch.cuda.current_device()
-            processor = AutoProcessor.from_pretrained("HuggingFaceTB/SmolVLM-256M-Instruct")
-            model = AutoModelForVision2Seq.from_pretrained(
-                "HuggingFaceTB/SmolVLM-256M-Instruct",
-                torch_dtype=torch.bfloat16,
-                _attn_implementation="flash_attention_2",
-            ).to(device)
-        elif type=='InternVL2':
-            processor = AutoProcessor.from_pretrained("OpenGVLab/InternVL2-2B", torch_dtype=torch.float16)
-            model = AutoModelForVision2Seq.from_pretrained("OpenGVLab/InternVL2-2B", torch_dtype=torch.float16)
         return processor, model
 
     def get_text_features(self, net, batch_far_labels):
@@ -379,7 +362,6 @@ class ANTSprocessor(ANTSBasePostprocessor):
         filter_images = [Image.open(image_path) for image_path in path]
         id_classses = [imagenet_classes[pred] for pred in far_pred_list]
         
-
         if len(filter_images)!=0:
             if self.mllm_model_type == 'QWEN':
                 candidate_label_list = self.get_candidate_label_list_qwen(filter_images, id_classses, processor, model)
@@ -389,13 +371,6 @@ class ANTSprocessor(ANTSBasePostprocessor):
                 candidate_label_list = self.get_candidate_label_list_blip2(filter_images, id_classses, processor, model)
             elif self.mllm_model_type == 'BLIP':
                 candidate_label_list = self.get_candidate_label_list_blip(filter_images, id_classses, processor, model)
-            elif self.mllm_model_type == 'SmolVLM':
-                candidate_label_list = self.get_candidate_label_list_smolvlm(filter_images, id_classses, processor, model)
-            #candidate_label_list = self.get_candidate_label_list_llava(filter_images, id_classses, processor, model)
-            #candidate_label_list = self.get_candidate_label_list_blip2(filter_images, id_classses, processor, model)
-            #candidate_label_list = self.get_candidate_label_list_blip(filter_images, id_classses, processor, model)
-
-            #candidate_label_list = self.get_candidate_label_list_smolvlm(filter_images, id_classses, processor, model)
             #candidate_label_list = self.get_far_canlabel_vllm(filter_images, id_classses, model)
             candidate_label_list = list(dict.fromkeys(candidate_label_list))
             candidate_label_list = list(set(label.rstrip('.') for label in candidate_label_list))
@@ -423,14 +398,7 @@ class ANTSprocessor(ANTSBasePostprocessor):
                 simlabel_list = self.get_simlabel_list_blip2(save_high_freq_pred, processor, model)
             elif self.mllm_model_type == 'BLIP':
                 simlabel_list = self.get_simlabel_list_blip(save_high_freq_pred, processor, model)
-            elif self.mllm_model_type == 'SmolVLM':
-                simlabel_list = self.get_simlabel_list_smolvlm(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_llava(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_tinyllava(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_qwen(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_blip2(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_smolvlm(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_instructblip(save_high_freq_pred, processor, model)
+
             new_items = []
             keys_to_remove = []
             for i in range(len(save_high_freq_pred)):
@@ -466,10 +434,6 @@ class ANTSprocessor(ANTSBasePostprocessor):
                 **inputs,
                 max_length=60
             )
-
-            # generated_texts = processor.batch_decode(
-            #     generated_ids, skip_special_tokens=True
-            # )
 
             input_len = inputs.input_ids.shape[1]
             new_ids = generated_ids[:, input_len:]
@@ -507,7 +471,6 @@ class ANTSprocessor(ANTSBasePostprocessor):
     def get_candidate_label_list_qwen(self, images, id_classses, processor, model):
         device = torch.cuda.current_device()
         model = model.to(device)
-        # conversation = "Give me one fine-grained image label to the image, no more than five words."
         ood_candidate_label_list = []
         batch_size = 16
         # 只生成一次 template，所有图片复用
@@ -526,9 +489,9 @@ class ANTSprocessor(ANTSBasePostprocessor):
                     img.resize((56, 56), Image.BILINEAR)
                     for img in images[batch_start: batch_start + batch_size]
                 ]
-                #texts = [template] * len(batch_images)
+                texts = [template] * len(batch_images)
                 inputs = processor(
-                    text=template, images=batch_images, padding=True, return_tensors="pt"
+                    text=texts, images=batch_images, padding=True, return_tensors="pt"
                 ).to(device, torch.float16)
 
                 generated_ids = model.generate(**inputs, max_new_tokens=10)
@@ -539,7 +502,6 @@ class ANTSprocessor(ANTSBasePostprocessor):
                     generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
                 )
                 ood_candidate_label_list.extend(output_text)
-                pdb.set_trace()
 
         return ood_candidate_label_list     
 
@@ -664,39 +626,3 @@ class ANTSprocessor(ANTSBasePostprocessor):
                 candidate_list.append(simclass_list)   
         return candidate_list 
     
-    
-    def get_simlabel_list_instructblip(self, high_freq_pred, processor, model):
-        url = "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg"
-        image = Image.open(requests.get(url, stream=True).raw)
-        device = torch.cuda.current_device()
-        candidate_list = []
-        classnames = [imagenet_classes[i] for i in high_freq_pred]
-
-        model = model.to(device)
-        with torch.no_grad():
-            candidate_list = []
-            for classname in tqdm(classnames):
-                # context = [
-                # ("Give me five different class names share visual features with donut", "1.bagle 2.pastry 3.bread 4.cake 5.cookie"),
-                # ]
-                # template = "Question: {} Answer: {}."
-
-                conversation = " Question: Give me five different class names share visual features with ###. Answer:"
-                conversation = conversation.replace("###", classname)
-                #prompt = " ".join([template.format(context[i][0], context[i][1]) for i in range(len(context))]) + conversation
-                inputs = processor(images=image, text=conversation, return_tensors="pt").to("cuda")
-                outputs = model.generate(
-                **inputs,
-                do_sample=False,
-                num_beams=5,
-                max_length=256,
-                min_length=1,
-                top_p=0.9,
-                repetition_penalty=1.5,
-                length_penalty=1.0,
-                temperature=1,
-                )
-                generated_text = processor.batch_decode(outputs, skip_special_tokens=True)[0].strip()
-                simclass_list = []
-                candidate_list.append(simclass_list)   
-        return candidate_list
