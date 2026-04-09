@@ -1,6 +1,6 @@
 
 
-## ANTS: Adaptive Negative Textual Space Shaping for OOD Detection via Test-Time MLLM Understanding and Reasoning(CVPR2026)
+## ANTS: Adaptive Negative Textual Space Shaping for OOD Detection via Test-Time MLLM Understanding and Reasoning(CVPR2026 oral)
 
 
 <a href='https://www.arxiv.org/abs/2509.03951'><img src='https://img.shields.io/badge/arXiv-2509.03951-b31b1b.svg'></a> &nbsp;&nbsp;
