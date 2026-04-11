@@ -165,7 +165,7 @@ class ANTSprocessor(ANTSBasePostprocessor):
         #use MCM
         #conf_in, _ = torch.max(score_only_in, dim=1)
         #use NegLabel
-        conf_in = self.grouping_score(output)
+        conf_in = self.grouping_score(output, group_len=self.group_len)
 
         self.all_conf_list.extend(conf_in)
         # self.ants_conf_list.extend(conf_in)
@@ -202,8 +202,11 @@ class ANTSprocessor(ANTSBasePostprocessor):
                 print("self.ens_idx", self.ens_idx)
 
         #for VSNL generation
-        self.get_high_pred_simlabel(net, processor, model)
-        self.near_nts_features = self.get_prompt_text_features(net, self.near_nts_list)
+        if self.mllm_model_type == 'BLIP2' or self.mllm_model_type == 'BLIP':
+            continue
+        else:    
+            self.get_high_pred_simlabel(net, processor, model)
+            self.near_nts_features = self.get_prompt_text_features(net, self.near_nts_list)
  
         if self.far_negative_feature_queue == None:
             conf_in_far = None
@@ -211,9 +214,12 @@ class ANTSprocessor(ANTSBasePostprocessor):
         else:
             id_ens_text_features = torch.cat([id_text_features, self.far_negative_feature_queue], dim=0)
             output_far = logit_scale * image_features @ id_ens_text_features.t() # batch * class.
-            if self.far_negative_feature_queue.shape[0] > self.group_len*10:
-                conf_in_far = self.grouping_score(output_far)
-                balance_conf_in_far = self.grouping_score(output_far, group_len=self.group_len*10) #the balance conf is for calculating ada_weight.
+            if self.far_negative_feature_queue.shape[0] > self.group_len:
+                conf_in_far = self.grouping_score(output_far, group_len=self.group_len)
+
+                #the balance conf is for calculating ada_weight. the number of negative labels is equal to class_num.
+                if self.far_negative_feature_queue.shape[0] > self.class_num:
+                    balance_conf_in_far = self.grouping_score(output_far, group_len=class_num) 
             else:
                 score_in_far = output_far.softmax(dim=-1)
                 conf_in_far = score_in_far[:, :class_num].sum(dim=-1)
@@ -227,8 +233,12 @@ class ANTSprocessor(ANTSBasePostprocessor):
             )
             output_near = logit_scale * image_features @ id_vsnl_text_features.t() # batch * class.
             balanced_output_near = logit_scale * image_features @ balanced_id_vsnl_text_features.t() # batch * class.
-            conf_in_near = self.grouping_score(output_near)
-            balance_conf_in_near = self.grouping_score(balanced_output_near, group_len=self.group_len*10) #the balance conf is for calculating ada_weight.
+            # since vsnl only contain similar labels less than 1000, so we set group_len to self.group_len
+            conf_in_near = self.grouping_score(output_near, group_len=self.group_len)
+
+            #the balance conf is for calculating ada_weight. the number of negative labels is equal to class_num.
+            if self.near_nts_features.shape[0] > self.class_num:
+                balance_conf_in_near = self.grouping_score(balanced_output_near, group_len=class_num) #the balance conf is for calculating ada_weight.
         else:
             conf_in_near = None 
             balance_conf_in_near = None
@@ -282,7 +292,7 @@ class ANTSprocessor(ANTSBasePostprocessor):
 
     def get_model(self, type):
         device = torch.cuda.current_device()
-        if type=='BLIP':
+        if type=='BLIP' or type=='BLIP2':
             #processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base", use_fast=True)
             #model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
             processor = AutoProcessor.from_pretrained("Salesforce/blip2-opt-2.7b", use_fast=True)
@@ -394,10 +404,6 @@ class ANTSprocessor(ANTSBasePostprocessor):
                 simlabel_list = self.get_simlabel_list_qwen(save_high_freq_pred, processor, model)
             elif self.mllm_model_type == 'LLAVA':
                 simlabel_list = self.get_simlabel_list_llava(save_high_freq_pred, processor, model)
-            elif self.mllm_model_type == 'BLIP2':
-                simlabel_list = self.get_simlabel_list_blip2(save_high_freq_pred, processor, model)
-            elif self.mllm_model_type == 'BLIP':
-                simlabel_list = self.get_simlabel_list_blip(save_high_freq_pred, processor, model)
 
             new_items = []
             keys_to_remove = []
@@ -420,7 +426,6 @@ class ANTSprocessor(ANTSBasePostprocessor):
         device = torch.cuda.current_device()
         ood_candidate_label_list = []
         prompt = "Question: Describe this image less than eight words. Answer:"
-        #prompt = "Briefly describe this image. Answer:"
         with torch.no_grad():
             batch_prompts = [prompt] * len(images)
             inputs = processor(
@@ -521,7 +526,7 @@ class ANTSprocessor(ANTSBasePostprocessor):
                             "role": "user",
                             "content": [
                             {"type": "image",},
-                            {"type": "text", "text": "Provide a short and concise description of this image less than eight words, don't include ###."},
+                            {"type": "text", "text": "Describe this image less than eight words, don't include ###."},
                             ],
                         }
                     ]
