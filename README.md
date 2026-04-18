@@ -21,7 +21,7 @@ If ANTS is helpful to your images or projects, please help star this repo. Thank
 
 ## 🔎 Test-Time MLLM Understanding and Reasoning
 <div align=center class="logo">
-      <img src="figs/cot_ood.jpg" style="width:320px">
+      <img src="figs/cot_ood.jpg" style="width:640px">
    </a>
 </div>
 
