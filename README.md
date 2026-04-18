@@ -108,4 +108,5 @@ If you find our repository useful for your research, please consider citing our 
 ## 🙏 Acknowledgement
 
 - [OpenOOD](https://github.com/Jingkang50/OpenOOD), an extensible codebase with Vision Models only.
+- [OpenOOD-VLM](https://github.com/YBZh/OpenOOD-VLM), an extensible with Vision Language Models.
 
