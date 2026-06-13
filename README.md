@@ -96,11 +96,12 @@ We provide the evaluation scripts for all the methods we support in [scripts fol
 If you find our repository useful for your research, please consider citing our paper:
 ```bibtex
 
-@article{zhu2025ants,
+@inproceedings{zhu2026ants,
   title={ANTS: Adaptive Negative Textual Space Shaping for OOD Detection via Test-Time MLLM Understanding and Reasoning},
   author={Zhu, Wenjie and Zhang, Yabin and Jin, Xin and Zeng, Wenjun and Zhang, Lei},
-  journal={arXiv preprint arXiv:2509.03951},
-  year={2025}
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={20--30},
+  year={2026}
 }
 
 ```
