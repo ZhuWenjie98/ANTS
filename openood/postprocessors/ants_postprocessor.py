@@ -203,7 +203,7 @@ class ANTSprocessor(ANTSBasePostprocessor):
 
         #for VSNL generation
         if self.mllm_model_type == 'BLIP2' or self.mllm_model_type == 'BLIP':
-            continue
+            pass
         else:    
             self.get_high_pred_simlabel(net, processor, model)
             self.near_nts_features = self.get_prompt_text_features(net, self.near_nts_list)
