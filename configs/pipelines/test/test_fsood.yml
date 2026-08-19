@@ -18,6 +18,7 @@ pipeline:
 evaluator:
   name: fsood
   ood_scheme: ood
+  ood_split: farood
 
 recorder:
   save_scores: True

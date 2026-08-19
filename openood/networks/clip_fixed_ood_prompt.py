@@ -520,8 +520,8 @@ def get_selected_ood_text_list(dataset='imagenet', total_ood_num=1000):
     print('the ID dataset is:', dataset)
     print('total_ood_num is:', total_ood_num)
     #######################################
-    foot_path = '/home/notebook/code/personal/S9052995/syn_pro/OpenOOD/data/txtfiles_output/'
-
+    #foot_path = '/home/notebook/code/personal/S9052995/syn_pro/OpenOOD/data/txtfiles_output/'
+    foot_path = './data/txtfiles_output/'
     wordnet_processed_path = foot_path + 'wordnet_' + dataset + '_cossim_dedup.pth'
     if os.path.exists(wordnet_processed_path):
         wordnet_dict = torch.load(wordnet_processed_path)

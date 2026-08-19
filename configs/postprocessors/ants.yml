@@ -1,11 +1,29 @@
 postprocessor:
   name: ants
-  APS_mode: True  # search for the best.
+  # ANTS uses fixed defaults unless APS is explicitly enabled by a caller.
+  APS_mode: False
   postprocessor_args:
+    # Percentile used to update the low-confidence candidate threshold.
     eta: 0.5
+    # 10,000 negative labels / 100 groups = 100 labels per group.
     group_num: 100
     random_permute: True
-    in_score: sum
+    # Supported values: ada, far_only, near_only.
+    in_score: far_only
     neglabel_init_flag: False
+    # Save generated ENS labels into the experiment output directory.
+    save_ens_labels: False
+    # TANL-style online selection and cumulative scoring for the ENS bank.
+    activation_aware_ens: False
+    activation_negative_count: 1000
+    activation_step: 2
+    activation_gap: 0.5
+    activation_score_queue_size: 20000
     ens_stop_step: 20
+    # Generate the first VSNL near-label bank after this many batches.
+    near_label_start_batch: 10
+    near_label_interval: 40
+    # Supported values: QWEN, LLAVA, BLIP, BLIP2.
     mllm_model_type: QWEN
+    # Retained for compatibility with the OpenOOD APS interface.
+    tau: 0.0

@@ -335,20 +335,16 @@ class OODEvaluatorClipTTA(OODEvaluator):
         #         id_pred = np.concatenate([id_pred, csid_pred])
         #         id_conf = np.concatenate([id_conf, csid_conf])
         #         id_gt = np.concatenate([id_gt, csid_gt])
-        # load nearood data and compute ood metrics
-        # pdb.set_trace()
-        # print(u'\u2500' * 70, flush=True)
-        # self._eval_ood(net, id_data_loaders['test'],
-        #                ood_data_loaders,
-        #                postprocessor,
-        #                ood_split='nearood', fsood=fsood)
+        ood_split = self.config.evaluator.get('ood_split', 'farood')
+        if ood_split not in ('nearood', 'farood'):
+            raise ValueError(
+                'evaluator.ood_split must be one of: nearood, farood')
 
-        # load farood data and compute ood metrics
         print(u'\u2500' * 70, flush=True)
         self._eval_ood(net, id_data_loaders['test'],
                        ood_data_loaders,
                        postprocessor,
-                       ood_split='farood', fsood=fsood)
+                       ood_split=ood_split, fsood=fsood)
 
     ## calculate the id pred/conf/gt online, not offline as the default setting. Therefore, different data order may lead to different results. 
     def _eval_ood(self,

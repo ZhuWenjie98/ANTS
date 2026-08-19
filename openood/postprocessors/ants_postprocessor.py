@@ -1,702 +1,608 @@
-from typing import Any
-import re
-import numpy as np
+"""ANTS test-time postprocessor.
+
+The public class in this module remains the OpenOOD integration point. Pure
+scoring, state management, label handling, and MLLM-specific behavior live in
+the :mod:`openood.postprocessors.ants` package.
+"""
+
+from pathlib import Path
+from typing import Any, Optional, Sequence, Tuple
+
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from tqdm import tqdm
-from torchvision import transforms
-from qwen_vl_utils import process_vision_info
-from transformers import pipeline
-
-from .ants_base_postprocessor import ANTSBasePostprocessor
-from openood.networks.clip_fixed_ood_prompt import imagenet_classes
-from openood.networks.clip import clip
-from collections import Counter
 from PIL import Image
-import requests
-import pdb
-import time
-import re
-import os
-import random
-import math
-from transformers.image_utils import load_image
-import copy
-from transformers import AutoProcessor, LlavaForConditionalGeneration, Blip2ForConditionalGeneration, BlipForConditionalGeneration, Qwen2VLForConditionalGeneration, Qwen3VLForConditionalGeneration
-from transformers import BlipProcessor, BlipForQuestionAnswering, Blip2Processor
-from transformers import InstructBlipProcessor, InstructBlipForConditionalGeneration
-from transformers import AutoModelForVision2Seq
 
-# imagenet_classes = imagenet_near_classnames
+from openood.networks.clip_fixed_ood_prompt import imagenet_classes
+
+from .ants.ens import append_feature_queue, update_adaptive_threshold
+from .ants.labels import normalize_labels
+from .ants.mllm import create_mllm_backend
+from .ants.scoring import (
+    activation_selected_score,
+    find_activation_threshold,
+    grouped_negative_score,
+    score_with_negative_features,
+)
+from .ants.state import ANTSRuntimeState
+from .ants.text_features import encode_text_features
+from .ants.vsnl import (
+    most_frequent_predictions,
+    update_similar_label_cache,
+)
+from .ants_base_postprocessor import ANTSBasePostprocessor
 
 
-############################ following nnguide!!  besides single points, using its neighbor images. 
-class ANTSprocessor(ANTSBasePostprocessor):
-    def __init__(self, config):
-        super(ANTSprocessor, self).__init__(config)
-        self.args = self.config.postprocessor.postprocessor_args
-        self.tau = self.args.tau
-        self.eta = self.args.eta
-        self.args_dict = self.config.postprocessor.postprocessor_sweep
-        self.in_score = self.args.in_score # sum | max
-        self.setup_flag = False
-        self.proj_flag = False
-        self.random_permute = self.args.random_permute
-        self.class_num = None
-        self.ens_stop_step = self.args.ens_stop_step
+class ANTSPostprocessor(ANTSBasePostprocessor):
+    """Adapt CLIP's negative text space with MLLM-generated labels."""
 
-        self.batch_idx = 0
-        self.ens_idx = 0
-        self.ada_threshold = 0.8
-        self.far_queue_max_size = 10000
-        self.neglabel_init_flag = self.args.neglabel_init_flag
-        self.group_num = self.args.group_num
-        self.group_len = int(self.far_queue_max_size/self.group_num)
+    FAR_QUEUE_MAX_SIZE = 10_000
+    MIN_ENSEMBLE_CANDIDATES = 200
+    SIMILAR_CLASS_LIMIT = 40
+    SIMILAR_LABEL_START_BATCH = 10
+    SIMILAR_LABEL_INTERVAL = 40
+    NEAR_BALANCE_REPEATS = 10
 
-        # net attributes migrated to self
-        self.all_conf_list = []
-        self.conf_near_list = []
-        self.conf_far_list = []
-        self.path_list = []
-        self.far_pred_list = []
-        
-        self.near_nts_features = None
-        self.near_nts_list = []
+    def __init__(self, config) -> None:
+        super().__init__(config)
+        args = config.postprocessor.postprocessor_args
 
-        self.imagenet_features = None
-        self.far_negative_feature_queue = None
-        self.upper_interval = None
-        self.high_freq_pred_dict = {}
-        self.pred = []
-        
+        self.tau = float(_config_value(args, 'tau', 0.0))
+        self.eta = float(_config_value(args, 'eta', 0.5))
+        self.in_score = str(
+            _config_value(args, 'in_score', 'far_only')
+        ).lower()
+        self.random_permute = _as_bool(
+            _config_value(args, 'random_permute', True)
+        )
+        self.neglabel_init_flag = _as_bool(
+            _config_value(args, 'neglabel_init_flag', False)
+        )
+        self.save_ens_labels = _as_bool(
+            _config_value(args, 'save_ens_labels', False)
+        )
+        self.activation_aware_ens = _as_bool(
+            _config_value(args, 'activation_aware_ens', False)
+        )
+        self.activation_negative_count = int(
+            _config_value(args, 'activation_negative_count', 1000)
+        )
+        self.activation_step = int(
+            _config_value(args, 'activation_step', 2)
+        )
+        self.activation_gap = float(
+            _config_value(args, 'activation_gap', 0.5)
+        )
+        self.activation_score_queue_size = int(
+            _config_value(args, 'activation_score_queue_size', 20_000)
+        )
+        self.ens_stop_step = int(
+            _config_value(args, 'ens_stop_step', 20)
+        )
+        self.similar_label_start_batch = int(
+            _config_value(
+                args,
+                'near_label_start_batch',
+                self.SIMILAR_LABEL_START_BATCH,
+            )
+        )
+        self.similar_label_interval = int(
+            _config_value(
+                args,
+                'near_label_interval',
+                self.SIMILAR_LABEL_INTERVAL,
+            )
+        )
+        self.mllm_model_type = str(
+            _config_value(args, 'mllm_model_type', 'QWEN')
+        ).upper()
+        self.args_dict = _config_value(
+            config.postprocessor, 'postprocessor_sweep', {}
+        )
 
-        self.mllm_model_type = "LLAVA"
-        
-    
-    def setup(self, net: nn.Module, id_loader_dict, ood_loader_dict):
-        class_num = net.n_cls
-        self.class_num = class_num
+        self.class_num: Optional[int] = None
+        self.group_num = 0
+        self.group_len = 0
+        self.reset_group_num(int(_config_value(args, 'group_num', 100)))
+        self._validate_config()
 
-        self.batch_idx = 0
-        self.ens_idx = 0
-        self.ada_threshold = 0.8
-        self.far_queue_max_size = 10000
-        self.neglabel_init_flag = self.args.neglabel_init_flag
-        self.group_num = self.args.group_num
-        self.group_len = int(self.far_queue_max_size/self.group_num)
+        self.state = ANTSRuntimeState()
+        self.mllm_backend = create_mllm_backend(self.mllm_model_type)
+        self._ens_label_path: Optional[Path] = None
+        self._ens_all_label_path: Optional[Path] = None
+        if self.save_ens_labels:
+            output_dir = Path(
+                str(_config_value(config, 'output_dir', '.'))
+            )
+            output_dir.mkdir(parents=True, exist_ok=True)
+            self._ens_all_label_path = output_dir / 'ens_labels_all.txt'
+            self._ens_all_label_path.write_text('', encoding='utf-8')
 
-        # net attributes migrated to self
-        self.all_conf_list = []
-        self.conf_near_list = []
-        self.conf_far_list = []
-        self.path_list = []
-        self.far_pred_list = []
-        
-        self.near_nts_features = None
-        self.near_nts_list = []
+    def setup(
+        self,
+        net: nn.Module,
+        id_loader_dict: Any,
+        ood_loader_dict: Any,
+    ) -> None:
+        """Initialize test-time memory for one ID/OOD dataset pair."""
 
-        self.imagenet_features = None
-        self.far_negative_feature_queue = None
-        self.upper_interval = None
-        self.high_freq_pred_dict = {}
-        self.pred = []
-        self.processor, self.model = self.get_model(self.mllm_model_type)
+        del id_loader_dict
+        self.class_num = int(net.n_cls)
+        self._prepare_ens_label_file(ood_loader_dict)
+        initial_features = None
         if self.neglabel_init_flag:
-            self.far_negative_feature_queue = net.text_features[:, self.class_num:].t()  
-        else:
-            self.far_negative_feature_queue = None
-        return
+            initial_features = (
+                net.text_features[:, self.class_num:].t().detach()
+            )
+        self.state.reset(initial_features)
+        self.mllm_backend.load()
+        initial_queue_size = (
+            0 if initial_features is None else initial_features.size(0)
+        )
+        print(
+            '[ANTS][ENS] initialized: '
+            f'updates=0/{self.ens_stop_step}, '
+            f'negative_labels={initial_queue_size}, '
+            f'threshold={self.state.adaptive_threshold:.4f}',
+            flush=True,
+        )
+        if self.in_score == 'near_only':
+            print(
+                '[ANTS][VSNL] near-only scoring enabled: '
+                f'first_update_batch={self.similar_label_start_batch}, '
+                f'update_interval={self.similar_label_interval}',
+                flush=True,
+            )
 
-    def reset_memory(self):
-        self.reset = True
+    def reset_memory(self) -> None:
+        """Clear all dynamic labels, features, counters, and histories."""
 
-    def reset_group_num(self, group_num):
-        self.group_num = group_num      
+        self.state.reset()
 
-    def grouping_score(self, output, group_len=100):
-        pos_logit = output[:, :self.class_num] ## B*C
-        neg_logit = output[:, self.class_num:] ## B*total_neg_num
-        group_num = int(neg_logit.size(1)/group_len)
-        drop = neg_logit.size(1) % group_num
-        if drop > 0:
-            neg_logit = neg_logit[:, :-drop]
+    def reset_group_num(self, group_num: int) -> None:
+        """Update the configured number of groups used for negative labels."""
 
-        if self.random_permute:
-            # print('use random permute')
-            SEED=0
-            torch.manual_seed(SEED)
-            torch.cuda.manual_seed(SEED)
-            idx = torch.randperm(neg_logit.shape[1]).to(output.device)
-            neg_logit = neg_logit.T ## total_neg_num*B
-            # pdb.set_trace()
-            neg_logit = neg_logit[idx].T.reshape(pos_logit.shape[0], group_num, -1).contiguous()
-        else:
-            neg_logit = neg_logit.reshape(pos_logit.shape[0], group_num, -1).contiguous()
-        scores = []
-        for i in range(group_num):
-            full_sim = torch.cat([pos_logit, neg_logit[:, i, :]], dim=-1) 
-            full_sim = full_sim.softmax(dim=-1)
-            pos_score = full_sim[:, :pos_logit.shape[1]].sum(dim=-1)
-            scores.append(pos_score.unsqueeze(-1))
-        scores = torch.cat(scores, dim=-1)
-        conf_in = scores.mean(dim=-1)
-        return conf_in
+        if group_num <= 0 or group_num > self.FAR_QUEUE_MAX_SIZE:
+            raise ValueError(
+                'group_num must be in [1, FAR_QUEUE_MAX_SIZE]'
+            )
+        self.group_num = group_num
+        self.group_len = max(1, self.FAR_QUEUE_MAX_SIZE // group_num)
+
+    def grouping_score(
+        self, output: torch.Tensor, group_len: Optional[int] = None
+    ) -> torch.Tensor:
+        """Compatibility wrapper around the extracted grouped scorer."""
+
+        self._require_setup()
+        return grouped_negative_score(
+            output,
+            self.class_num,
+            group_len or self.group_len,
+            self.random_permute,
+        )
 
     @torch.no_grad()
-    def postprocess(self, net: nn.Module, data: Any, path: Any):
+    def postprocess(
+        self,
+        net: nn.Module,
+        data: Any,
+        path: Optional[Sequence[str]] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Predict classes and produce ANTS in-distribution confidence."""
+
+        self._require_setup()
         net.eval()
-        self.batch_idx = self.batch_idx + 1
-        processor, model = self.processor, self.model
+        self.state.batch_index += 1
 
-        class_num = net.n_cls
-        # pdb.set_trace()
-        image_features, text_features, logit_scale = net(data, return_feat=True)
-        id_text_features = text_features[:class_num]
+        image_features, text_features, logit_scale = net(
+            data, return_feat=True
+        )
+        id_text_features = text_features[:self.class_num]
+        logits = logit_scale * image_features @ text_features.t()
+        id_probabilities = logits[:, :self.class_num].softmax(dim=1)
+        predictions = id_probabilities.argmax(dim=1)
+        base_confidence = self.grouping_score(logits)
 
-        output = logit_scale * image_features @ text_features.t() # batch * class.
+        prediction_values = predictions.detach().cpu().tolist()
+        self.state.predictions.extend(prediction_values)
+        self.state.all_confidences.extend(
+            base_confidence.detach().cpu().unbind()
+        )
+        self._collect_ensemble_candidates(
+            path, predictions, base_confidence
+        )
+        self._maybe_update_far_labels(net)
+        self._maybe_update_near_labels(net)
 
-        output_only_in = output[:, :class_num]
-        score_only_in = torch.softmax(output_only_in, dim=1)
-
-        _, pred_in = torch.max(score_only_in, dim=1)
-        _, pred_out = torch.max(output[:, class_num:], dim=1)
-
-        pred_in_list = [pred.item() for pred in pred_in]
-        self.pred.extend(pred_in_list)
-
-        #use MCM
-        #conf_in, _ = torch.max(score_only_in, dim=1)
-        #use NegLabel
-        conf_in = self.grouping_score(output)
-
-        self.all_conf_list.extend(conf_in)
-        # self.ants_conf_list.extend(conf_in)
-
-        #for ENS generation
-        bins = np.arange(0, 1.1, 0.1)
-        self.all_conf_list = [i.cpu() for i in self.all_conf_list]
-        # self.ants_conf_list = [i.cpu() for i in self.ants_conf_list]
-
-        threshold = self.ada_threshold
-        #print("self.ada_threshold", self.ada_threshold)
-        for i in range(len(conf_in)):
-            if conf_in[i] < threshold:  # 判断分数是否低于 threshold
-                self.path_list.append(path[i])  # 存储对应的路径
-                self.far_pred_list.append(pred_in[i])
-
-        if self.ens_idx < self.ens_stop_step:
-            if len(self.path_list) > 200:
-                counts, _ = np.histogram(self.all_conf_list, bins)
-                differences = np.abs(np.diff(counts))
-                max_diff_index = np.argmax(differences)
-                upper_interval = bins[max_diff_index + 1] 
-                self.upper_interval = upper_interval
-                conf_neg = [conf.cpu() for conf in self.all_conf_list if conf < torch.tensor(upper_interval)]
-                #conf_neg = [x for x in self.conf_list if x < upper_interval]
-                percentile = self.eta*100
-                #percentile = 30 use to calculate lambda
-                # update self.fg_thresold
-                n_threshold = np.percentile(conf_neg, percentile)
-                self.ada_threshold = n_threshold
-
-                self.far_canlabel_generation(net, processor, model)
-                self.ens_idx = self.ens_idx + 1
-                print("self.ens_idx", self.ens_idx)
-
-        #for VSNL generation
-        self.get_high_pred_simlabel(net, processor, model)
-        self.near_nts_features = self.get_prompt_text_features(net, self.near_nts_list)
- 
-        if self.far_negative_feature_queue == None:
-            conf_in_far = None
-            balance_conf_in_far = None
-        else:
-            id_ens_text_features = torch.cat([id_text_features, self.far_negative_feature_queue], dim=0)
-            output_far = logit_scale * image_features @ id_ens_text_features.t() # batch * class.
-            if self.far_negative_feature_queue.shape[0] > self.group_len*10:
-                conf_in_far = self.grouping_score(output_far)
-                balance_conf_in_far = self.grouping_score(output_far, group_len=self.group_len*10)
-            else:
-                score_in_far = output_far.softmax(dim=-1)
-                conf_in_far = score_in_far[:, :class_num].sum(dim=-1)
-                balance_conf_in_far = score_in_far[:, :class_num].sum(dim=-1)
-     
-        # for near not maintain queue
-        if self.near_nts_features!=None:
-            id_vsnl_text_features = torch.cat([id_text_features, self.near_nts_features.t()], dim=0)
-            balanced_id_vsnl_text_features = torch.cat(
-                [id_text_features] + [self.near_nts_features.t()] * 10, dim=0
+        far_confidence = score_with_negative_features(
+            image_features,
+            id_text_features,
+            self.state.far_negative_features,
+            logit_scale,
+            self.group_len,
+            self.random_permute,
+        )
+        if self.activation_aware_ens and far_confidence is not None:
+            far_confidence = self._activation_aware_far_score(
+                image_features,
+                id_text_features,
+                logit_scale,
+                far_confidence,
             )
-            output_near = logit_scale * image_features @ id_vsnl_text_features.t() # batch * class.
-            balanced_output_near = logit_scale * image_features @ balanced_id_vsnl_text_features.t() # batch * class.
-            conf_in_near = self.grouping_score(output_near)
-            balance_conf_in_near = self.grouping_score(balanced_output_near, group_len=self.group_len*10)
-        else:
-            conf_in_near = None 
-            balance_conf_in_near = None
-  
-        conf = []
-        if conf_in_far is None:
-            conf_in_far = conf_in
-            balance_conf_in_far = conf_in
+        far_balanced = score_with_negative_features(
+            image_features,
+            id_text_features,
+            self.state.far_negative_features,
+            logit_scale,
+            self.class_num,
+            self.random_permute,
+        )
 
-        if conf_in_near is None:
-            conf_in_near = conf_in
-            balance_conf_in_near = conf_in
-        # max in prob - max out prob
-        if self.in_score == 'ada':
-               
-            self.conf_far_list.extend(balance_conf_in_far)  
-            self.conf_near_list.extend(balance_conf_in_near) 
+        near_features = self.state.near_negative_features
+        near_confidence = score_with_negative_features(
+            image_features,
+            id_text_features,
+            near_features,
+            logit_scale,
+            self.group_len,
+            self.random_permute,
+        )
+        repeated_near_features = (
+            near_features.repeat(self.NEAR_BALANCE_REPEATS, 1)
+            if near_features is not None
+            else None
+        )
+        near_balanced = score_with_negative_features(
+            image_features,
+            id_text_features,
+            repeated_near_features,
+            logit_scale,
+            self.class_num,
+            self.random_permute,
+        )
 
-            #conf_in_his = torch.tensor(self.ants_conf_list)
-            conf_in_far_his = torch.tensor(self.conf_far_list)
-            conf_in_near_his = torch.tensor(self.conf_near_list)
-            
-            #1.using fraction ada_weight
-            a = 1 - conf_in_far_his.mean()
-            b = 1 - conf_in_near_his.mean()
+        confidence = self._fuse_confidences(
+            base_confidence,
+            far_confidence,
+            far_balanced,
+            near_confidence,
+            near_balanced,
+        )
+        if torch.isnan(confidence).any():
+            raise FloatingPointError('ANTS produced NaN confidence values')
+        return predictions, confidence
 
-            ada_weight = a/(a + b)
-            print("ada_weight", ada_weight)
+    def _activation_aware_far_score(
+        self,
+        image_features: torch.Tensor,
+        id_text_features: torch.Tensor,
+        logit_scale: torch.Tensor,
+        reference_confidence: torch.Tensor,
+    ) -> torch.Tensor:
+        """Apply TANL-style transductive selection to the current ENS bank."""
 
-            # use ada weight
-            conf = ada_weight*conf_in_far + (1-ada_weight)*conf_in_near
+        state = self.state
+        state.activation_confidences.extend(
+            reference_confidence.detach().cpu().unbind()
+        )
+        if (
+            len(state.activation_confidences)
+            > self.activation_score_queue_size
+        ):
+            del state.activation_confidences[
+                :-self.activation_score_queue_size
+            ]
+        threshold = find_activation_threshold(
+            torch.stack(state.activation_confidences)
+        )
 
-        elif self.in_score == 'far_only':
-            conf = conf_in_far
-            conf = torch.tensor(conf)
-        elif self.in_score == 'near_only':
-            conf = conf_in_near
-            conf = torch.tensor(conf)
-        else:
-            raise NotImplementedError
-        if torch.isnan(conf).any():
-            pdb.set_trace()
+        negative_features = state.far_negative_features
+        text_features = torch.cat(
+            (id_text_features, negative_features), dim=0
+        )
+        logits = logit_scale * image_features @ text_features.t()
+        score, selected_count, low_count, high_count = (
+            activation_selected_score(
+                logits,
+                self.class_num,
+                reference_confidence,
+                threshold,
+                self.activation_gap,
+                self.activation_negative_count,
+                self.activation_step,
+            )
+        )
+        if score is None:
+            return reference_confidence
+        if state.batch_index == 1 or state.batch_index % 10 == 0:
+            print(
+                '[ANTS][TANL-ENS] activation-aware selection: '
+                f'batch={state.batch_index}, '
+                f'threshold={threshold:.4f}, '
+                f'low={low_count}, high={high_count}, '
+                f'selected={selected_count}',
+                flush=True,
+            )
+        return score
 
-        return pred_in, conf
+    def set_hyperparam(self, hyperparam: Sequence[float]) -> None:
+        """Set the legacy APS hyperparameter."""
 
-    def set_hyperparam(self, hyperparam: list):
-        self.tau = hyperparam[0]
+        if not hyperparam:
+            raise ValueError('hyperparam must contain tau')
+        self.tau = float(hyperparam[0])
 
-    def get_hyperparam(self):
+    def get_hyperparam(self) -> float:
+        """Return the legacy APS hyperparameter."""
+
         return self.tau
 
-    def get_model(self, type):
-        device = torch.cuda.current_device()
-        if type=='BLIP':
-            #processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base", use_fast=True)
-            #model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
-            processor = AutoProcessor.from_pretrained("Salesforce/blip2-opt-2.7b", use_fast=True)
-            model = Blip2ForConditionalGeneration.from_pretrained("Salesforce/blip2-opt-2.7b", torch_dtype=torch.float16, device_map="auto")
-            model = model.to(device)
-        elif type=='InstructBLIP':
-            processor = InstructBlipProcessor.from_pretrained("Salesforce/instructblip-flan-t5-xl", torch_dtype=torch.float16)
-            model = InstructBlipForConditionalGeneration.from_pretrained("Salesforce/instructblip-flan-t5-xl", torch_dtype=torch.float16)
-        elif type=='QWEN':
-            min_pixels = 256*28*28
-            max_pixels = 1280*28*28
-            processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-2B-Instruct", min_pixels=min_pixels, max_pixels=max_pixels)
-            model = Qwen2VLForConditionalGeneration.from_pretrained(
-                "Qwen/Qwen2-VL-2B-Instruct",
-                torch_dtype=torch.float16,
-                attn_implementation="flash_attention_2",
-                device_map="auto",
-            )
-        elif type=='LLAVA':
-            model_id = "llava-hf/llava-1.5-7b-hf"
-            model = LlavaForConditionalGeneration.from_pretrained(model_id, torch_dtype=torch.float16)
-            # only llava have chat template
-            #model_id = "llava-hf/llava-1.5-7b-hf"
-            processor = AutoProcessor.from_pretrained(model_id, torch_dtype=torch.float16, low_cpu_mem_usage=True, load_in_4bit=True, use_flash_attention_2=True)
-        elif type=='SmolVLM':
-            device = torch.cuda.current_device()
-            processor = AutoProcessor.from_pretrained("HuggingFaceTB/SmolVLM-256M-Instruct")
-            model = AutoModelForVision2Seq.from_pretrained(
-                "HuggingFaceTB/SmolVLM-256M-Instruct",
-                torch_dtype=torch.bfloat16,
-                _attn_implementation="flash_attention_2",
-            ).to(device)
-        elif type=='InternVL2':
-            processor = AutoProcessor.from_pretrained("OpenGVLab/InternVL2-2B", torch_dtype=torch.float16)
-            model = AutoModelForVision2Seq.from_pretrained("OpenGVLab/InternVL2-2B", torch_dtype=torch.float16)
-        return processor, model
+    def get_text_features(self, net, labels):
+        """Compatibility wrapper for far-label CLIP encoding."""
 
-    def get_text_features(self, net, batch_far_labels):
-        if len(batch_far_labels)!=0:
-            classnames = batch_far_labels # imagenet --> imagenet class names
-            with torch.no_grad():
-                text_features = []
-                for classname in classnames:
-                    texts = clip.tokenize(classname).cuda()  # tokenize
-                    class_embeddings = net.model.encode_text(texts)  # embed with text encoder
-                    class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
-                    class_embedding = class_embeddings.mean(dim=0)
-                    class_embedding /= class_embedding.norm()
-                    text_features.append(class_embedding)
-                text_features = torch.stack(text_features, dim=1).cuda() # 512*1000
-            return text_features
-        else:
-            return None   
+        return encode_text_features(net, labels)
 
-    def get_prompt_text_features(self, net, batch_far_labels):
-        if len(batch_far_labels)!=0:
-            template = 'The nice {}.'
-            classnames = batch_far_labels # imagenet --> imagenet class names
-            with torch.no_grad():
-                text_features = []
-                for classname in classnames:   
-                    texts = [template.format(classname)]  # format with class
-                    texts = clip.tokenize(classname).cuda()  # tokenize
-                    class_embeddings = net.model.encode_text(texts)  # embed with text encoder
-                    class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
-                    class_embedding = class_embeddings.mean(dim=0)
-                    class_embedding /= class_embedding.norm()
-                    text_features.append(class_embedding)
-                text_features = torch.stack(text_features, dim=1).cuda() # 512*1000
-            return text_features
-        else:
-            return None          
+    def get_prompt_text_features(self, net, labels):
+        """Compatibility wrapper for prompted near-label CLIP encoding."""
 
+        return encode_text_features(net, labels, 'The nice {}.')
 
-    def far_canlabel_generation(self, net, processor, model):
-        batch_far_labels = self.get_far_canlabel(net, self.path_list, self.far_pred_list, processor, model)  # 执行方法
-        self.path_list.clear()  # 清空 path_list
-        self.far_pred_list.clear()  # 清空 path_list
-        batch_far_text_features = self.get_text_features(net, batch_far_labels)
-        
-        if self.far_negative_feature_queue == None:
-            self.far_negative_feature_queue = batch_far_text_features.t()
-        else:    
-            self.far_negative_feature_queue = torch.cat(
-                (batch_far_text_features.t(), self.far_negative_feature_queue), dim=0
-            )
-            if self.far_negative_feature_queue.shape[0] > self.far_queue_max_size:
-                self.far_negative_feature_queue = self.far_negative_feature_queue[-self.far_queue_max_size:, :]
+    def _collect_ensemble_candidates(
+        self,
+        paths: Optional[Sequence[str]],
+        predictions: torch.Tensor,
+        confidences: torch.Tensor,
+    ) -> None:
+        if self.state.ensemble_index >= self.ens_stop_step:
+            return
+        if paths is None:
+            return
+        if len(paths) != len(confidences):
+            raise ValueError('path count must match the batch size')
+        for sample_path, prediction, confidence in zip(
+            paths, predictions, confidences
+        ):
+            if float(confidence) < self.state.adaptive_threshold:
+                self.state.candidate_paths.append(str(sample_path))
+                self.state.candidate_predictions.append(int(prediction))
 
-    def get_far_canlabel(self, net, path, far_pred_list, processor, model):
-        filter_images = [Image.open(image_path) for image_path in path]
-        id_classses = [imagenet_classes[pred] for pred in far_pred_list]
-        
+    def _maybe_update_far_labels(self, net) -> None:
+        state = self.state
+        if state.ensemble_index >= self.ens_stop_step:
+            return
+        if len(state.candidate_paths) <= self.MIN_ENSEMBLE_CANDIDATES:
+            return
 
-        if len(filter_images)!=0:
-            if self.mllm_model_type == 'QWEN':
-                candidate_label_list = self.get_candidate_label_list_qwen(filter_images, id_classses, processor, model)
-            elif self.mllm_model_type == 'LLAVA':
-                candidate_label_list = self.get_candidate_label_list_llava(filter_images, id_classses, processor, model)
-            elif self.mllm_model_type == 'BLIP2':
-                candidate_label_list = self.get_candidate_label_list_blip2(filter_images, id_classses, processor, model)
-            elif self.mllm_model_type == 'BLIP':
-                candidate_label_list = self.get_candidate_label_list_blip(filter_images, id_classses, processor, model)
-            elif self.mllm_model_type == 'SmolVLM':
-                candidate_label_list = self.get_candidate_label_list_smolvlm(filter_images, id_classses, processor, model)
-            #candidate_label_list = self.get_candidate_label_list_llava(filter_images, id_classses, processor, model)
-            #candidate_label_list = self.get_candidate_label_list_blip2(filter_images, id_classses, processor, model)
-            #candidate_label_list = self.get_candidate_label_list_blip(filter_images, id_classses, processor, model)
-
-            #candidate_label_list = self.get_candidate_label_list_smolvlm(filter_images, id_classses, processor, model)
-            #candidate_label_list = self.get_far_canlabel_vllm(filter_images, id_classses, model)
-            candidate_label_list = list(dict.fromkeys(candidate_label_list))
-            candidate_label_list = list(set(label.rstrip('.') for label in candidate_label_list))
-            return candidate_label_list
-        else:
-            return []
-     
-
-    def get_high_pred_simlabel(self, net, processor, model):
-        sim_id_classes_num = 40
-        class_counts = Counter(self.pred)
-        all_counts = len(self.pred)
-
-        filtered_counts = class_counts.most_common(sim_id_classes_num)
-        high_freq_pred = [pred for pred, _ in filtered_counts]
-        
-        save_high_freq_pred = [pred for pred in high_freq_pred if pred not in self.high_freq_pred_dict.keys()]
-        if self.batch_idx >= 10 and (self.batch_idx - 10) % 40 == 0:
-        #if self.batch_idx%40==0:
-            if self.mllm_model_type == 'QWEN':
-                simlabel_list = self.get_simlabel_list_qwen(save_high_freq_pred, processor, model)
-            elif self.mllm_model_type == 'LLAVA':
-                simlabel_list = self.get_simlabel_list_llava(save_high_freq_pred, processor, model)
-            elif self.mllm_model_type == 'BLIP2':
-                simlabel_list = self.get_simlabel_list_blip2(save_high_freq_pred, processor, model)
-            elif self.mllm_model_type == 'BLIP':
-                simlabel_list = self.get_simlabel_list_blip(save_high_freq_pred, processor, model)
-            elif self.mllm_model_type == 'SmolVLM':
-                simlabel_list = self.get_simlabel_list_smolvlm(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_llava(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_tinyllava(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_qwen(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_blip2(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_smolvlm(save_high_freq_pred, processor, model)
-            #simlabel_list = self.get_simlabel_list_instructblip(save_high_freq_pred, processor, model)
-            new_items = []
-            keys_to_remove = []
-            for i in range(len(save_high_freq_pred)):
-                new_items.append((save_high_freq_pred[i], simlabel_list[i]))
-            for key, value in new_items:
-                self.high_freq_pred_dict[key] = value    
-            for pre_pred in self.high_freq_pred_dict.keys():
-                if pre_pred not in high_freq_pred:
-                    keys_to_remove.append(pre_pred)
-            for key in keys_to_remove:
-                self.high_freq_pred_dict.pop(key)
-            self.near_nts_list = [label for sublist in self.high_freq_pred_dict.values() for label in sublist] 
-            self.near_nts_list = list(dict.fromkeys(self.near_nts_list))       
-        
-
-    def get_candidate_label_list_blip2(
-        self, images, id_classes, processor, model
-    ):
-        device = torch.cuda.current_device()
-        ood_candidate_label_list = []
-        prompt = "Question: Describe this image less than eight words. Answer:"
-        #prompt = "Briefly describe this image. Answer:"
-        with torch.no_grad():
-            batch_prompts = [prompt] * len(images)
-            inputs = processor(
-                images=images,
-                text=batch_prompts,
-                return_tensors="pt",
-                padding=True
-            ).to(device, torch.float16)
-
-            generated_ids = model.generate(
-                **inputs,
-                max_length=60
-            )
-
-            # generated_texts = processor.batch_decode(
-            #     generated_ids, skip_special_tokens=True
-            # )
-
-            input_len = inputs.input_ids.shape[1]
-            new_ids = generated_ids[:, input_len:]
-            generated_texts = processor.batch_decode(
-                new_ids, skip_special_tokens=True
-            )
-
-            ood_candidate_label_list.extend(
-                [t.split("Answer:")[-1].strip() for t in generated_texts]
-            )
-
-        return ood_candidate_label_list
-
-
-    def get_candidate_label_list_blip(self, images, id_classses, processor, model):
-        device = torch.cuda.current_device()
-        model = model.to(device)
-        with torch.no_grad():
-            inputs = processor(
-                images=images,
-                return_tensors="pt",
-                padding=True
-            ).to(device, torch.float16)
-            generated_ids = model.generate(
-                **inputs,
-                max_new_tokens=30
-            )
-            input_len = inputs.pixel_values.shape[0]
-            generated_texts = processor.batch_decode(
-                generated_ids, skip_special_tokens=True
-            )
-            ood_candidate_label_list = [t.strip() for t in generated_texts]
-        return ood_candidate_label_list
-
-    def get_candidate_label_list_qwen(self, images, id_classses, processor, model):
-        device = torch.cuda.current_device()
-        model = model.to(device)
-        # conversation = "Give me one fine-grained image label to the image, no more than five words."
-        ood_candidate_label_list = []
-        batch_size = 16
-        # 只生成一次 template，所有图片复用
-        template = processor.tokenizer.apply_chat_template(
-            [{"role": "user", "content": [
-                {"type": "image"},
-                {"type": "text", "text": "Describe this image less than eight words. Answer:"},
-            ]}],
-            tokenize=False, add_generation_prompt=True
+        threshold, upper_interval = update_adaptive_threshold(
+            state.all_confidences, self.eta
         )
-        template = template[0] if isinstance(template, list) else template
+        state.adaptive_threshold = threshold
+        state.upper_interval = upper_interval
 
-        with torch.no_grad():
-            for batch_start in range(0, len(images), batch_size):
-                batch_images = [
-                    img.resize((56, 56), Image.BILINEAR)
-                    for img in images[batch_start: batch_start + batch_size]
-                ]
-                #texts = [template] * len(batch_images)
-                inputs = processor(
-                    text=template, images=batch_images, padding=True, return_tensors="pt"
-                ).to(device, torch.float16)
+        candidate_count = len(state.candidate_paths)
+        next_update = state.ensemble_index + 1
+        print(
+            '[ANTS][ENS] update started: '
+            f'updates={next_update}/{self.ens_stop_step}, '
+            f'candidates={candidate_count}, '
+            f'threshold={threshold:.4f}',
+            flush=True,
+        )
+        labels = self._describe_candidate_images()
+        self._save_ens_labels(labels)
+        state.candidate_paths.clear()
+        state.candidate_predictions.clear()
+        text_features = encode_text_features(net, labels)
+        queued_features = (
+            text_features.t() if text_features is not None else None
+        )
+        state.far_negative_features = append_feature_queue(
+            state.far_negative_features,
+            queued_features,
+            self.FAR_QUEUE_MAX_SIZE,
+        )
+        state.ensemble_index += 1
+        queue_size = (
+            0
+            if state.far_negative_features is None
+            else state.far_negative_features.size(0)
+        )
+        print(
+            '[ANTS][ENS] update completed: '
+            f'updates={state.ensemble_index}/{self.ens_stop_step}, '
+            f'generated_labels={len(labels)}, '
+            f'negative_labels={queue_size}',
+            flush=True,
+        )
 
-                generated_ids = model.generate(**inputs, max_new_tokens=10)
-                generated_ids_trimmed = [
-                    out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-                ]
-                output_text = processor.batch_decode(
-                    generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
-                )
-                ood_candidate_label_list.extend(output_text)
-                pdb.set_trace()
+    def _prepare_ens_label_file(self, ood_loader: Any) -> None:
+        if not self.save_ens_labels:
+            self._ens_label_path = None
+            return
 
-        return ood_candidate_label_list     
+        dataset = getattr(ood_loader, 'dataset', None)
+        dataset_name = str(getattr(dataset, 'name', 'ood'))
+        safe_name = ''.join(
+            character
+            if character.isalnum() or character in ('-', '_')
+            else '_'
+            for character in dataset_name
+        )
+        output_dir = self._ens_all_label_path.parent
+        self._ens_label_path = output_dir / f'ens_labels_{safe_name}.txt'
+        self._ens_label_path.write_text('', encoding='utf-8')
+        print(
+            f'[ANTS][ENS] labels will be saved to {self._ens_label_path}',
+            flush=True,
+        )
+
+    def _save_ens_labels(self, labels: Sequence[str]) -> None:
+        if not self.save_ens_labels or not labels:
+            return
+
+        text = ''.join(f'{label}\n' for label in labels)
+        for output_path in (
+            self._ens_label_path,
+            self._ens_all_label_path,
+        ):
+            if output_path is not None:
+                with output_path.open('a', encoding='utf-8') as file:
+                    file.write(text)
+        print(
+            '[ANTS][ENS] labels saved: '
+            f'count={len(labels)}, file={self._ens_label_path}',
+            flush=True,
+        )
+
+    def _describe_candidate_images(self):
+        images = []
+        for image_path in self.state.candidate_paths:
+            with Image.open(image_path) as image:
+                images.append(image.convert('RGB').copy())
+        id_classes = [
+            imagenet_classes[prediction]
+            for prediction in self.state.candidate_predictions
+        ]
+        labels = self.mllm_backend.describe_images(images, id_classes)
+        return normalize_labels(labels)
+
+    def _maybe_update_near_labels(self, net) -> None:
+        if not self.mllm_backend.supports_similar_labels:
+            return
+        batch_index = self.state.batch_index
+        is_update_batch = (
+            batch_index >= self.similar_label_start_batch
+            and (
+                batch_index - self.similar_label_start_batch
+            ) % self.similar_label_interval == 0
+        )
+        if not is_update_batch:
+            return
+
+        frequent_predictions = most_frequent_predictions(
+            self.state.predictions, self.SIMILAR_CLASS_LIMIT
+        )
+        new_predictions = [
+            prediction
+            for prediction in frequent_predictions
+            if prediction not in self.state.similar_label_cache
+        ]
+        class_names = [
+            imagenet_classes[prediction] for prediction in new_predictions
+        ]
+        print(
+            '[ANTS][VSNL] update started: '
+            f'batch={batch_index}, '
+            f'active_classes={len(frequent_predictions)}, '
+            f'new_classes={len(new_predictions)}',
+            flush=True,
+        )
+        generated_labels = self.mllm_backend.suggest_similar_classes(
+            class_names
+        )
+        self.state.near_negative_labels = update_similar_label_cache(
+            self.state.similar_label_cache,
+            frequent_predictions,
+            new_predictions,
+            generated_labels,
+        )
+        features = encode_text_features(
+            net, self.state.near_negative_labels, 'The nice {}.'
+        )
+        self.state.near_negative_features = (
+            features.t() if features is not None else None
+        )
+        print(
+            '[ANTS][VSNL] update completed: '
+            f'batch={batch_index}, '
+            f'near_labels={len(self.state.near_negative_labels)}',
+            flush=True,
+        )
+
+    def _fuse_confidences(
+        self,
+        base: torch.Tensor,
+        far: Optional[torch.Tensor],
+        far_balanced: Optional[torch.Tensor],
+        near: Optional[torch.Tensor],
+        near_balanced: Optional[torch.Tensor],
+    ) -> torch.Tensor:
+        far = base if far is None else far
+        far_balanced = base if far_balanced is None else far_balanced
+        near = base if near is None else near
+        near_balanced = base if near_balanced is None else near_balanced
+
+        if self.in_score == 'far_only':
+            return far
+        if self.in_score == 'near_only':
+            return near
+        if self.in_score != 'ada':
+            raise ValueError(
+                'in_score must be one of: ada, far_only, near_only'
+            )
+
+        self.state.far_confidences.extend(
+            far_balanced.detach().cpu().unbind()
+        )
+        self.state.near_confidences.extend(
+            near_balanced.detach().cpu().unbind()
+        )
+        far_mean = torch.stack(self.state.far_confidences).mean()
+        near_mean = torch.stack(self.state.near_confidences).mean()
+        far_uncertainty = 1.0 - far_mean
+        near_uncertainty = 1.0 - near_mean
+        denominator = far_uncertainty + near_uncertainty
+        if float(denominator.abs()) < torch.finfo(denominator.dtype).eps:
+            weight = 0.5
+        else:
+            weight = float(far_uncertainty / denominator)
+        return weight * far + (1.0 - weight) * near
+
+    def _validate_config(self) -> None:
+        if not 0.0 <= self.eta <= 1.0:
+            raise ValueError('eta must be between zero and one')
+        if self.ens_stop_step < 0:
+            raise ValueError('ens_stop_step must be non-negative')
+        if self.activation_negative_count <= 0:
+            raise ValueError('activation_negative_count must be positive')
+        if self.activation_step <= 0:
+            raise ValueError('activation_step must be positive')
+        if not 0.0 <= self.activation_gap <= 1.0:
+            raise ValueError('activation_gap must be between zero and one')
+        if self.activation_score_queue_size <= 0:
+            raise ValueError(
+                'activation_score_queue_size must be positive'
+            )
+        if self.similar_label_start_batch <= 0:
+            raise ValueError('near_label_start_batch must be positive')
+        if self.similar_label_interval <= 0:
+            raise ValueError('near_label_interval must be positive')
+        if self.in_score not in ('ada', 'far_only', 'near_only'):
+            raise ValueError(
+                'in_score must be one of: ada, far_only, near_only'
+            )
+
+    def _require_setup(self) -> None:
+        if self.class_num is None:
+            raise RuntimeError('setup() must be called before postprocess()')
 
 
-    def get_candidate_label_list_llava(self, images, id_classses, processor, model):
-        device = torch.cuda.current_device()
-        model = model.to(device)
-        candidate_list = []
-        ood_candidate_label_list = []
-
-        with torch.no_grad():
-            for i in range(len(images)):
-                raw_image = images[i]
-                classname = id_classses[i]
-                conversation = [
-                        {
-                            "role": "user",
-                            "content": [
-                            {"type": "image",},
-                            {"type": "text", "text": "Provide a short and concise description of this image less than eight words, don't include ###."},
-                            ],
-                        }
-                    ]
-
-                conversation[0]["content"][1]["text"] = conversation[0]["content"][1]["text"].replace("###", classname)
-                prompt = processor.apply_chat_template(conversation, add_generation_prompt=True)
-                inputs = processor(images=raw_image, text=prompt, return_tensors='pt').to(device, torch.float16)
-                output = model.generate(**inputs, max_new_tokens=30, do_sample=False)
-                assistant_response = processor.decode(output[0][2:], skip_special_tokens=True)
-                #ood_candidate_label = assistant_response.split('ASSISTANT: ')[1].strip()
-                parts = assistant_response.split('assistant\n')
-                ood_candidate_label = parts[1].strip() if len(parts) > 1 else assistant_response.strip()
-                ood_candidate_label_list.append(ood_candidate_label)    
-        # acc
-        #return
-        return ood_candidate_label_list  
-      
+# Historical code imported this spelling. Keep it as a compatibility alias.
+ANTSprocessor = ANTSPostprocessor
 
 
-    def get_simlabel_list_llava(self, high_freq_pred, processor, model):
-        candidate_list = []
-        device = torch.cuda.current_device()
-        model = model.to(device)
-        #classnames = [pet_names[i] for i in high_freq_pred]
-        classnames = [imagenet_classes[i] for i in high_freq_pred]
-        url = "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg"
-        raw_image = Image.open(requests.get(url, stream=True).raw)
-        with torch.no_grad():
-            for classname in tqdm(classnames):
-                conversation = [
-                    {
-                    "role": "user",
-                    "content": [
-                        {"type":"image",},
-                        {"type": "text", "text": "Give me five different class names that share similar visual features with ###, don't contain ###."},
-                        ],
-                    },
-                ]
-                conversation[0]["content"][1]["text"] = conversation[0]["content"][1]["text"].replace("###", classname)
-                prompt = processor.apply_chat_template(conversation, add_generation_prompt=True)
-                inputs = processor(images=raw_image, text=prompt, return_tensors='pt').to(device, torch.float16)
-                output = model.generate(**inputs, max_new_tokens=100, do_sample=False)
-                answer = processor.decode(output[0][2:], skip_special_tokens=True)
-                assistant_response = answer.split('ASSISTANT: ')[1].strip()
-                # 按行分割字符串
-                lines = assistant_response.split('\n')
-                # 提取类名
-                simclass_list = []
-                for line in lines:
-                    # 检查行是否以数字开头并包含类名
-                    if line.strip().startswith(('1.', '2.', '3.', '4.', '5.')):
-                        # 提取类名并去除前面的编号
-                        class_name = line.split('. ')[1].strip() if len(line.split('. ')) > 1 else None
-                        simclass_list.append(class_name)      
-                candidate_list.append(simclass_list)   
-        return candidate_list    
-    
-    
+def _config_value(config, key: str, default):
+    value = getattr(config, key, None)
+    return default if value is None else value
 
-    def get_simlabel_list_qwen(self, high_freq_pred, processor, model):
-        candidate_list = []
-        device = torch.cuda.current_device()
-        model = model.to(device)
-        # conversation = "Give me one fine-grained image label to the image, no more than five words."
-        classnames = [imagenet_classes[i] for i in high_freq_pred]
-        # 28x28 = 1 image token，占用最小
-        raw_image = Image.new("RGB", (28, 28))
-        with torch.no_grad():
-            for i in range(len(classnames)):
-                conversation = [
-                    {
-                        "role": "user",
-                        "content": [
-                        {"type": "image",},
-                        {"type": "text", "text": "please suggest five different class names that share visual features with ###."},
-                        ],
-                    }
-                ]
-                conversation[0]["content"][1]["text"] = conversation[0]["content"][1]["text"].replace("###", classnames[i])
-                text = processor.apply_chat_template(
-                conversation, tokenize=False, add_generation_prompt=True
-                )
-                inputs = processor(
-                text=[text], images=[raw_image], padding=True, return_tensors="pt"
-                )
-                # image_inputs, video_inputs = process_vision_info(conversation)
-                inputs = inputs.to(device)
 
-                # Inference: Generation of the output
-                generated_ids = model.generate(**inputs, max_new_tokens=50)
-                generated_ids_trimmed = [
-                    out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-                ]
-                output_text = processor.batch_decode(
-                    generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
-                )
-                lines = output_text[0].strip().split('\n')
-                simclass_list = [
-                    parts[1] for line in lines
-                    if len(parts := line.split('. ', 1)) == 2
-                ]
-                candidate_list.append(simclass_list)   
-        return candidate_list 
-    
-    
-    def get_simlabel_list_instructblip(self, high_freq_pred, processor, model):
-        url = "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg"
-        image = Image.open(requests.get(url, stream=True).raw)
-        device = torch.cuda.current_device()
-        candidate_list = []
-        classnames = [imagenet_classes[i] for i in high_freq_pred]
-
-        model = model.to(device)
-        with torch.no_grad():
-            candidate_list = []
-            for classname in tqdm(classnames):
-                # context = [
-                # ("Give me five different class names share visual features with donut", "1.bagle 2.pastry 3.bread 4.cake 5.cookie"),
-                # ]
-                # template = "Question: {} Answer: {}."
-
-                conversation = " Question: Give me five different class names share visual features with ###. Answer:"
-                conversation = conversation.replace("###", classname)
-                #prompt = " ".join([template.format(context[i][0], context[i][1]) for i in range(len(context))]) + conversation
-                inputs = processor(images=image, text=conversation, return_tensors="pt").to("cuda")
-                outputs = model.generate(
-                **inputs,
-                do_sample=False,
-                num_beams=5,
-                max_length=256,
-                min_length=1,
-                top_p=0.9,
-                repetition_penalty=1.5,
-                length_penalty=1.0,
-                temperature=1,
-                )
-                generated_text = processor.batch_decode(outputs, skip_special_tokens=True)[0].strip()
-                simclass_list = []
-                candidate_list.append(simclass_list)   
-        return candidate_list
+def _as_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in ('true', '1', 'yes', 'on'):
+            return True
+        if normalized in ('false', '0', 'no', 'off'):
+            return False
+    raise ValueError(f'expected a boolean value, got {value!r}')

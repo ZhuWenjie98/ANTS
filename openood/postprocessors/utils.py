@@ -48,7 +48,7 @@ from .knn_oneoodprompt_postprocessor import KnnOneOodPromptPostprocessor
 from .label_relationship_postprocessor import LabelRelationPostprocessor
 from .activated_neg_postprocessor import ActivatedNegPostprocessor
 # from .activated_neg_postprocessor_sigclip import ActivatedNegPostprocessor_SigClip
-from .ants_postprocessor import ANTSprocessor
+from .ants_postprocessor import ANTSPostprocessor
 
 
 
@@ -105,7 +105,7 @@ def get_postprocessor(config: Config):
         'labelrelationship': LabelRelationPostprocessor,
         'actneg': ActivatedNegPostprocessor,
         # 'actnegsigclip': ActivatedNegPostprocessor_SigClip,
-        'ants': ANTSprocessor
+        'ants': ANTSPostprocessor
     }
 
     return postprocessors[config.postprocessor.name](config)
